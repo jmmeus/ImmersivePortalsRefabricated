@@ -11,8 +11,10 @@ import net.minecraft.client.renderer.ViewArea;
 import net.minecraft.client.renderer.chunk.SectionRenderDispatcher;
 import net.minecraft.client.renderer.chunk.SectionRenderDispatcher.RenderSection;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.SectionPos;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.util.Mth;
+import net.minecraft.util.profiling.Profiler;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import org.apache.commons.lang3.Validate;
@@ -137,14 +139,11 @@ public class ImmPtlViewArea extends ViewArea {
      * In {@link net.minecraft.client.renderer.SectionOcclusionGraph#initializeQueueForFullUpdate(Camera, Queue)} it reads the RenderChunks in another thread.
      */
     @Override
-    public void repositionCamera(double playerX, double playerZ) {
-        Minecraft.getInstance().getProfiler().push("built_section_storage");
+    public void repositionCamera(SectionPos cameraSectionPos) {
+        Profiler.get().push("built_section_storage");
         
-        int cameraBlockX = Mth.floor(playerX);
-        int cameraBlockZ = Mth.floor(playerZ);
-        
-        int cameraChunkX = cameraBlockX >> 4;
-        int cameraChunkZ = cameraBlockZ >> 4;
+        int cameraChunkX = cameraSectionPos.x();
+        int cameraChunkZ = cameraSectionPos.z();
         ChunkPos cameraChunkPos = new ChunkPos(
             cameraChunkX, cameraChunkZ
         );
@@ -160,7 +159,7 @@ public class ImmPtlViewArea extends ViewArea {
         this.sections = preset.data;
         this.currentPreset = preset;
         
-        Minecraft.getInstance().getProfiler().pop();
+        Profiler.get().pop();
     }
     
     @Override
@@ -259,7 +258,7 @@ public class ImmPtlViewArea extends ViewArea {
         for (int offsetCY = 0; offsetCY < sectionGridSizeY; offsetCY++) {
             RenderSection builtChunk = factory.new RenderSection(
                 0,
-                sectionX << 4, (offsetCY << 4) + minY, sectionZ << 4
+                SectionPos.asLong(sectionX, offsetCY + McHelper.getMinSectionY(level), sectionZ)
             );
             
             array[offsetCY] = builtChunk;
@@ -289,7 +288,7 @@ public class ImmPtlViewArea extends ViewArea {
     }
     
     private void purge() {
-        Minecraft.getInstance().getProfiler().push("my_built_section_storage_purge");
+        Profiler.get().push("my_built_section_storage_purge");
         
         long dropTime = Helper.secondToNano(GcMonitor.isMemoryNotEnough() ? 3 : 20);
         
@@ -348,7 +347,7 @@ public class ImmPtlViewArea extends ViewArea {
             });
         }
         
-        Minecraft.getInstance().getProfiler().pop();
+        Profiler.get().pop();
     }
     
     private boolean shouldDropPreset(long dropTime, long currentTime, Preset preset) {

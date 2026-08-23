@@ -71,7 +71,7 @@ configs:
       - pattern: |-
           void ( )*main( )*\(( )*( )*\)( )*(
           )*\{
-        replacement:
+        replacement: |-
           uniform vec4 iportal_ClippingEquation;
           void main() {
       - pattern: "\\}(?![\\S\\s]*\\})"

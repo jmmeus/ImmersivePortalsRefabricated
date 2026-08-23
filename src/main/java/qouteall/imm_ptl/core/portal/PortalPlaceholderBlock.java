@@ -2,15 +2,22 @@ package qouteall.imm_ptl.core.portal;
 
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-import net.fabricmc.fabric.api.object.builder.v1.block.FabricBlockSettings;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.RandomSource;
+import net.minecraft.util.profiling.Profiler;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
+import net.minecraft.world.level.LevelReader;
+import net.minecraft.world.level.ScheduledTickAccess;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.SoundType;
+import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
@@ -51,7 +58,8 @@ public class PortalPlaceholderBlock extends Block {
     );
     
     public static final PortalPlaceholderBlock instance = new PortalPlaceholderBlock(
-        FabricBlockSettings.create()
+        BlockBehaviour.Properties.of()
+            .setId(ResourceKey.create(Registries.BLOCK, ResourceLocation.fromNamespaceAndPath("immersive_portals", "portal_placeholder")))
             .noCollission()
             .sound(SoundType.GLASS)
             .strength(1.0f, 0)
@@ -90,46 +98,46 @@ public class PortalPlaceholderBlock extends Block {
     }
     
     @Override
-    public BlockState updateShape(
+    protected BlockState updateShape(
         BlockState thisState,
-        Direction direction,
-        BlockState neighborState,
-        LevelAccessor worldAccess,
+        LevelReader worldAccess,
+        ScheduledTickAccess scheduledTickAccess,
         BlockPos blockPos,
-        BlockPos neighborPos
+        Direction direction,
+        BlockPos neighborPos,
+        BlockState neighborState,
+        RandomSource random
     ) {
-        if (!worldAccess.isClientSide()) {
-            if (worldAccess instanceof Level) {
-                Level world = (Level) worldAccess;
-                
-                world.getProfiler().push("portal_placeholder");
-                
-                Direction.Axis axis = thisState.getValue(AXIS);
-                if (direction.getAxis() != axis) {
-                    McHelper.findEntitiesRough(
-                        BreakablePortalEntity.class,
-                        world,
-                        Vec3.atLowerCornerOf(blockPos),
-                        2,
-                        e -> true
-                    ).forEach(
-                        portal -> {
-                            ((BreakablePortalEntity) portal).notifyPlaceholderUpdate();
-                        }
-                    );
-                }
-                
-                world.getProfiler().pop();
+        if (worldAccess instanceof Level world && !world.isClientSide()) {
+            Profiler.get().push("portal_placeholder");
+            
+            Direction.Axis axis = thisState.getValue(AXIS);
+            if (direction.getAxis() != axis) {
+                McHelper.findEntitiesRough(
+                    BreakablePortalEntity.class,
+                    world,
+                    Vec3.atLowerCornerOf(blockPos),
+                    2,
+                    e -> true
+                ).forEach(
+                    portal -> {
+                        ((BreakablePortalEntity) portal).notifyPlaceholderUpdate();
+                    }
+                );
             }
+            
+            Profiler.get().pop();
         }
         
         return super.updateShape(
             thisState,
-            direction,
-            neighborState,
             worldAccess,
+            scheduledTickAccess,
             blockPos,
-            neighborPos
+            direction,
+            neighborPos,
+            neighborState,
+            random
         );
     }
     
@@ -141,16 +149,6 @@ public class PortalPlaceholderBlock extends Block {
             }
         }
         return false;
-    }
-    
-    //---------These are copied from BlockBarrier
-    @Override
-    public boolean propagatesSkylightDown(
-        BlockState blockState_1,
-        BlockGetter blockView_1,
-        BlockPos blockPos_1
-    ) {
-        return true;
     }
     
     @Override

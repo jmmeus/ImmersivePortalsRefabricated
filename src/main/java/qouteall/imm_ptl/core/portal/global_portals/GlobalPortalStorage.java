@@ -20,6 +20,7 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
@@ -248,9 +249,17 @@ public class GlobalPortalStorage extends SavedData {
     
     private static Portal readPortalFromTag(Level currWorld, CompoundTag compoundTag) {
         ResourceLocation entityId = McHelper.newResourceLocation(compoundTag.getString("entity_type"));
-        EntityType<?> entityType = BuiltInRegistries.ENTITY_TYPE.get(entityId);
+        var entityTypeHolder = BuiltInRegistries.ENTITY_TYPE.get(entityId);
+        if (entityTypeHolder.isEmpty()) {
+            Helper.err("Unknown entity type " + entityId);
+            return null;
+        }
+        EntityType<?> entityType = entityTypeHolder.get().value();
         
-        Entity e = entityType.create(currWorld);
+        Entity e = entityType.create(currWorld, EntitySpawnReason.LOAD);
+        if (e == null) {
+            return null;
+        }
         e.load(compoundTag);
         
         ((Portal) e).isGlobalPortal = true;

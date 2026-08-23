@@ -1,5 +1,6 @@
 package qouteall.imm_ptl.core.render;
 
+import com.mojang.blaze3d.ProjectionType;
 import com.mojang.blaze3d.platform.Lighting;
 import com.mojang.blaze3d.systems.RenderSystem;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
@@ -8,9 +9,12 @@ import net.fabricmc.api.Environment;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.client.renderer.FogParameters;
 import net.minecraft.client.renderer.FogRenderer;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.LightTexture;
+import net.minecraft.util.profiling.Profiler;
+import org.joml.Vector4f;
 import net.minecraft.client.renderer.PostChain;
 import net.minecraft.client.renderer.RenderBuffers;
 import net.minecraft.client.renderer.SectionBufferBuilderPack;
@@ -216,7 +220,6 @@ public class MyGameRenderer {
         ((IEWorldRenderer) worldRenderer).portal_setTransparencyShader(null);
         
         IERenderSystem.ip_setModelViewStack(new Matrix4fStack(16));
-        RenderSystem.applyModelViewMatrix();
         
         IrisInterface.invoker.setPipeline(worldRenderer, null);
         
@@ -227,11 +230,11 @@ public class MyGameRenderer {
         
         //invoke rendering
         invokeWrapper.accept(() -> {
-            client.getProfiler().push("render_portal_content");
+            Profiler.get().push("render_portal_content");
             client.gameRenderer.renderLevel(
-                client.getTimer()
+                client.getDeltaTracker()
             );
-            client.getProfiler().pop();
+            Profiler.get().pop();
         });
         
         SodiumInterface.invoker.switchContextWithCurrentWorldRenderer(newSodiumContext);
@@ -266,9 +269,8 @@ public class MyGameRenderer {
         
         ((IEWorldRenderer) worldRenderer).portal_setFrustum(oldFrustum);
         
-        client.gameRenderer.resetProjectionMatrix(oldProjectionMatrix);
+        RenderSystem.setProjectionMatrix(oldProjectionMatrix, ProjectionType.PERSPECTIVE);
         IERenderSystem.ip_setModelViewStack(oldModelViewStack);
-        RenderSystem.applyModelViewMatrix();
         
         IrisInterface.invoker.setPipeline(worldRenderer, irisPipeline);
         
@@ -300,14 +302,21 @@ public class MyGameRenderer {
         boolean isFoggy = client.level.effects().isFoggyAt(Mth.floor(x), Mth.floor(y)) ||
             client.gui.getBossOverlay().shouldCreateWorldFog();
         
-        FogRenderer.setupFog(
-            camera, FogRenderer.FogMode.FOG_TERRAIN, Math.max(g, 32.0F), isFoggy, RenderStates.getPartialTick()
+        Vector4f fogColor = FogRenderer.computeFogColor(
+            camera,
+            RenderStates.getPartialTick(),
+            client.level,
+            client.options.getEffectiveRenderDistance(),
+            client.gameRenderer.getDarkenWorldAmount(RenderStates.getPartialTick())
         );
-        FogRenderer.levelFogColor();
+        FogParameters fogParameters = FogRenderer.setupFog(
+            camera, FogRenderer.FogMode.FOG_TERRAIN, fogColor, Math.max(g, 32.0F), isFoggy, RenderStates.getPartialTick()
+        );
+        RenderSystem.setShaderFog(fogParameters);
     }
     
     public static void updateFogColor() {
-        FogRenderer.setupColor(
+        FogRenderer.computeFogColor(
             client.gameRenderer.getMainCamera(),
             RenderStates.getPartialTick(),
             client.level,

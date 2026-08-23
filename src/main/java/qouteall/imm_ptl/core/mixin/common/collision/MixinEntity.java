@@ -1,6 +1,9 @@
 package qouteall.imm_ptl.core.mixin.common.collision;
 
+import com.llamalad7.mixinextras.sugar.Local;
 import net.minecraft.core.BlockPos;
+import java.util.List;
+import java.util.Set;
 import net.minecraft.core.SectionPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
@@ -46,6 +49,9 @@ public abstract class MixinEntity implements IEEntity, ImmPtlEntityExtension {
     
     @Shadow
     protected abstract Vec3 collide(Vec3 vec3d_1);
+    
+    @Shadow
+    public abstract AABB getBoundingBox();
     
     @Shadow
     public abstract Component getName();
@@ -151,31 +157,27 @@ public abstract class MixinEntity implements IEEntity, ImmPtlEntityExtension {
         }
     }
     
+    @Inject(
+        method = "checkInsideBlocks(Ljava/util/List;Ljava/util/Set;)V",
+        at = @At("HEAD"),
+        cancellable = true
+    )
+    private void onCheckInsideBlocks(List movements, Set states, CallbackInfo ci) {
+        if (ip_getActiveCollisionBox(this.getBoundingBox()) == null) {
+            ci.cancel();
+        }
+    }
+    
     @Redirect(
-        method = "Lnet/minecraft/world/entity/Entity;checkInsideBlocks()V",
+        method = "checkInsideBlocks(Ljava/util/List;Ljava/util/Set;)V",
         at = @At(
             value = "INVOKE",
             target = "Lnet/minecraft/world/entity/Entity;getBoundingBox()Lnet/minecraft/world/phys/AABB;"
         )
     )
     private AABB redirectBoundingBoxInCheckingBlockCollision(Entity entity) {
-        return ip_getActiveCollisionBox(entity.getBoundingBox());
-    }
-    
-    @Inject(
-        method = "checkInsideBlocks",
-        at = @At(
-            value = "INVOKE_ASSIGN",
-            target = "Lnet/minecraft/world/entity/Entity;getBoundingBox()Lnet/minecraft/world/phys/AABB;",
-            shift = At.Shift.AFTER
-        ),
-        locals = LocalCapture.CAPTURE_FAILHARD,
-        cancellable = true
-    )
-    private void onCheckInsideBlocks(CallbackInfo ci, AABB box) {
-        if (box == null) {
-            ci.cancel();
-        }
+        AABB box = ip_getActiveCollisionBox(entity.getBoundingBox());
+        return box != null ? box : entity.getBoundingBox();
     }
     
     // avoid suffocation when colliding with a portal on wall

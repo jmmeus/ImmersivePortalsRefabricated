@@ -35,7 +35,7 @@ public abstract class MixinRenderTarget implements IEFrameBuffer {
     
     
     @Shadow
-    public abstract void resize(int width, int height, boolean clearError);
+    public abstract void resize(int width, int height);
     
     @Inject(method = "<init>", at = @At("RETURN"))
     private void onInit(
@@ -153,7 +153,7 @@ public abstract class MixinRenderTarget implements IEFrameBuffer {
     public void ip_setIsStencilBufferEnabledAndReload(boolean cond) {
         if (isStencilBufferEnabled != cond) {
             isStencilBufferEnabled = cond;
-            resize(width, height, Minecraft.ON_OSX);
+            resize(width, height);
         }
     }
 }

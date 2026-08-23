@@ -6,6 +6,7 @@ import net.irisshaders.iris.Iris;
 import net.irisshaders.iris.pipeline.IrisRenderingPipeline;
 import net.irisshaders.iris.pipeline.WorldRenderingPipeline;
 import net.irisshaders.iris.uniforms.SystemTimeUniforms;
+import net.minecraft.util.profiling.Profiler;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
 import org.lwjgl.opengl.GL11;
@@ -164,7 +165,7 @@ public class ExperimentalIrisPortalRenderer extends PortalRenderer {
         RenderSystem.enableDepthTest();
         RenderSystem.depthMask(true);
         
-        client.getProfiler().popPush("render_portal_total");
+        Profiler.get().popPush("render_portal_total");
         renderPortals(modelView);
     }
     
@@ -217,13 +218,13 @@ public class ExperimentalIrisPortalRenderer extends PortalRenderer {
         
         int outerPortalStencilValue = PortalRendering.getPortalLayer();
         
-        client.getProfiler().push("render_view_area");
+        Profiler.get().push("render_view_area");
         
         boolean anySamplePassed = PortalRenderInfo.renderAndDecideVisibility(portal, () -> {
             renderPortalViewAreaToStencil(portal, modelView);
         });
         
-        client.getProfiler().pop();
+        Profiler.get().pop();
         
         if (!anySamplePassed) {
             setStencilStateForWorldRendering();
@@ -235,9 +236,9 @@ public class ExperimentalIrisPortalRenderer extends PortalRenderer {
         int thisPortalStencilValue = outerPortalStencilValue + 1;
         
         if (!portal.isFuseView()) {
-            client.getProfiler().push("clear_depth_of_view_area");
+            Profiler.get().push("clear_depth_of_view_area");
             clearDepthOfThePortalViewArea(portal);
-            client.getProfiler().pop();
+            Profiler.get().pop();
         }
         
         setStencilStateForWorldRendering();

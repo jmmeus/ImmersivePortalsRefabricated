@@ -1,6 +1,6 @@
 package qouteall.imm_ptl.core.render;
 
-import com.mojang.blaze3d.shaders.Program;
+import com.mojang.blaze3d.shaders.CompiledShader;
 import com.mojang.logging.LogUtils;
 import me.shedaniel.cloth.clothconfig.shadowed.org.yaml.snakeyaml.Yaml;
 import org.jetbrains.annotations.Nullable;
@@ -19,11 +19,11 @@ public class ShaderCodeTransformation {
         vs, fs
     }
     
-    private static boolean matches(ShaderType me, Program.Type type) {
-        if (type == Program.Type.FRAGMENT) {
+    private static boolean matches(ShaderType me, CompiledShader.Type type) {
+        if (type == CompiledShader.Type.FRAGMENT) {
             return me == ShaderType.fs;
         }
-        else if (type == Program.Type.VERTEX) {
+        else if (type == CompiledShader.Type.VERTEX) {
             return me == ShaderType.vs;
         }
         return false;
@@ -69,7 +69,7 @@ public class ShaderCodeTransformation {
         }
     }
     
-    public static String transform(Program.Type type, String shaderId, String inputCode) {
+    public static String transform(CompiledShader.Type type, String shaderId, String inputCode) {
         if (configs == null) {
             LOGGER.info("Shader Transform Skipping {}", shaderId);
             return inputCode;
@@ -96,10 +96,14 @@ public class ShaderCodeTransformation {
     }
     
     @Nullable
-    private static Config getConfig(Program.Type type, String shaderId) {
+    private static Config getConfig(CompiledShader.Type type, String shaderId) {
+        String cleanId = shaderId.replace("minecraft:", "").replace("immersive_portals:", "").replace("core/", "");
         return configs.stream().filter(
-            config -> matches(config.type, type) &&
-                config.affectedShaders.contains(shaderId)
+            config -> matches(config.type, type) && (
+                config.affectedShaders.contains(shaderId) ||
+                config.affectedShaders.contains(cleanId) ||
+                config.affectedShaders.stream().anyMatch(shaderId::endsWith)
+            )
         ).findFirst().orElse(null);
     }
     
@@ -109,6 +113,11 @@ public class ShaderCodeTransformation {
             return false;
         }
         
-        return configs.stream().anyMatch(config -> config.affectedShaders.contains(shaderName));
+        String cleanName = shaderName.replace("minecraft:", "").replace("immersive_portals:", "").replace("core/", "");
+        return configs.stream().anyMatch(config -> 
+            config.affectedShaders.contains(shaderName) ||
+            config.affectedShaders.contains(cleanName) ||
+            config.affectedShaders.stream().anyMatch(shaderName::endsWith)
+        );
     }
 }

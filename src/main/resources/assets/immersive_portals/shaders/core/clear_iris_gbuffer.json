@@ -4,8 +4,8 @@
         "srcrgb": "srcalpha",
         "dstrgb": "1-srcalpha"
     },
-    "vertex": "clear_iris_gbuffer",
-    "fragment": "clear_iris_gbuffer",
+    "vertex": "immersive_portals:core/clear_iris_gbuffer",
+    "fragment": "immersive_portals:core/clear_iris_gbuffer",
     "attributes": [
         "Color"
     ],

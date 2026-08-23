@@ -71,7 +71,6 @@ dependencies {
         officialMojangMappings() {
             setNameSyntheticMembers(false)
         }
-        parchment("org.parchmentmc.data:parchment-1.21:2024.07.28")
     }
 
     modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
@@ -98,10 +97,10 @@ dependencies {
         transitive(false)
     }
 
-    modApi("com.github.iPortalTeam:DimLib:${dimlib_version}") {
+    modApi("qouteall.dimlib:dimlib:${dimlib_version}") {
         exclude(group: "net.fabricmc.fabric-api")
     }
-    include("com.github.iPortalTeam:DimLib:${dimlib_version}")
+    include("qouteall.dimlib:dimlib:${dimlib_version}")
 
     // put these into inner mod to reduce duplicate MC jar
 
@@ -160,7 +159,7 @@ processResources {
 }
 
 tasks.withType(JavaCompile).configureEach {
-    it.options.release = 17
+    it.options.release = 21
 }
 
 java {
@@ -169,8 +168,8 @@ java {
     // If you remove this line, sources will not be generated.
     withSourcesJar()
 
-    sourceCompatibility = JavaVersion.VERSION_17
-    targetCompatibility = JavaVersion.VERSION_17
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
 }
 
 

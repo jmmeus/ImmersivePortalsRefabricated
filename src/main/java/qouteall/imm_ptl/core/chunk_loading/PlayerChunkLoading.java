@@ -3,8 +3,6 @@ package qouteall.imm_ptl.core.chunk_loading;
 import com.mojang.logging.LogUtils;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
-import net.fabricmc.fabric.impl.attachment.AttachmentTargetImpl;
-import net.fabricmc.fabric.impl.attachment.sync.AttachmentChange;
 import net.minecraft.network.protocol.game.ClientboundChunkBatchFinishedPacket;
 import net.minecraft.network.protocol.game.ClientboundChunkBatchStartPacket;
 import net.minecraft.network.protocol.game.ClientboundLevelChunkWithLightPacket;
@@ -216,14 +214,6 @@ public class PlayerChunkLoading {
      * */
     @IPVanillaCopy
     private static void onSendPacket(ServerGamePacketListenerImpl listener, LevelChunk chunk) {
-        ServerPlayer player = listener.player;
-        
-        List<AttachmentChange> changes = new ArrayList<>();
-        ((AttachmentTargetImpl) chunk).fabric_computeInitialSyncChanges(player, changes::add);
-        
-        if (!changes.isEmpty()) {
-            AttachmentChange.partitionAndSendPackets(changes, player);
-        }
     }
     
     /**

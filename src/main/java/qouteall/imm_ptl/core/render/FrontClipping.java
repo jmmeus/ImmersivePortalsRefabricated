@@ -4,7 +4,7 @@ import com.mojang.blaze3d.shaders.Uniform;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.ShaderInstance;
+import net.minecraft.client.renderer.CompiledShaderProgram;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
@@ -178,7 +178,7 @@ public class FrontClipping {
             return;
         }
         
-        ShaderInstance shader = RenderSystem.getShader();
+        CompiledShaderProgram shader = RenderSystem.getShader();
         
         if (shader == null) {
             return;
@@ -205,7 +205,7 @@ public class FrontClipping {
             return;
         }
         
-        ShaderInstance shader = RenderSystem.getShader();
+        CompiledShaderProgram shader = RenderSystem.getShader();
         
         if (shader == null) {
             return;

@@ -5,10 +5,12 @@ import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.event.Event;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
-import net.fabricmc.fabric.api.object.builder.v1.entity.FabricEntityTypeBuilder;
 import net.minecraft.Util;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.StringTag;
@@ -94,17 +96,19 @@ public class Portal extends Entity implements
     public static <T extends Portal> EntityType<T> createPortalEntityType(
         EntityType.EntityFactory<T> constructor
     ) {
-        return FabricEntityTypeBuilder.create(
-                MobCategory.MISC,
-                constructor
-            ).dimensions(
-                // eye height should be 0
-                EntityDimensions.fixed(0, 0)
-            ).fireImmune()
-            .trackRangeBlocks(96)
-            .trackedUpdateRate(20)
-            .forceTrackedVelocityUpdates(true)
-            .build();
+        return EntityType.Builder.of(
+                constructor,
+                MobCategory.MISC
+            ).sized(0, 0)
+            .fireImmune()
+            .clientTrackingRange(96)
+            .updateInterval(20)
+            .build(ResourceKey.create(Registries.ENTITY_TYPE, ResourceLocation.fromNamespaceAndPath("immersive_portals", "portal")));
+    }
+    
+    @Override
+    public boolean hurtServer(ServerLevel serverLevel, DamageSource damageSource, float amount) {
+        return false;
     }
     
     private static final AABB NULL_BOX =
@@ -1054,7 +1058,7 @@ public class Portal extends Entity implements
     }
     
     public Direction getApproximateFacingDirection() {
-        return Direction.getNearest(
+        return Direction.getApproximateNearest(
             getNormal().x, getNormal().y, getNormal().z
         );
     }
@@ -1653,11 +1657,11 @@ public class Portal extends Entity implements
     }
     
     public Direction getTransformedGravityDirection(Direction oldGravityDir) {
-        Vec3 oldGravityVec = Vec3.atLowerCornerOf(oldGravityDir.getNormal());
+        Vec3 oldGravityVec = oldGravityDir.getUnitVec3();
         
         Vec3 newGravityVec = transformLocalVecNonScale(oldGravityVec);
         
-        return Direction.getNearest(
+        return Direction.getApproximateNearest(
             newGravityVec.x, newGravityVec.y, newGravityVec.z
         );
     }

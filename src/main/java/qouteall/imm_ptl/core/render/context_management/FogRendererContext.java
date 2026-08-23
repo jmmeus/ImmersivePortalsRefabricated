@@ -5,13 +5,14 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.FogRenderer;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.util.profiling.Profiler;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
+import org.joml.Vector4f;
 import qouteall.imm_ptl.core.ClientWorldLoader;
 import qouteall.imm_ptl.core.ducks.IECamera;
 
 import java.util.function.Consumer;
-import java.util.function.Supplier;
 
 /**
  * {@link FogRenderer}
@@ -19,16 +20,12 @@ import java.util.function.Supplier;
  */
 @SuppressWarnings("SpellCheckingInspection")
 public class FogRendererContext {
-    public float red;
-    public float green;
-    public float blue;
     public int targetBiomeFog = -1;
     public int previousBiomeFog = -1;
     public long biomeChangedTime = -1L;
     
-    public static Consumer<FogRendererContext> copyContextFromObject;
-    public static Consumer<FogRendererContext> copyContextToObject;
-    public static Supplier<Vec3> getCurrentFogColor;
+    public static Consumer<FogRendererContext> copyContextFromObject = context -> {};
+    public static Consumer<FogRendererContext> copyContextToObject = context -> {};
     
     public static StaticFieldsSwappingManager<FogRendererContext> swappingManager;
     
@@ -36,15 +33,18 @@ public class FogRendererContext {
         //load the class and apply mixin
         FogRenderer.class.hashCode();
         
-        swappingManager = new StaticFieldsSwappingManager<>(
-            copyContextFromObject, copyContextToObject, false,
-            FogRendererContext::new
-        );
-        
-        
+        if (swappingManager == null) {
+            swappingManager = new StaticFieldsSwappingManager<>(
+                copyContextFromObject, copyContextToObject, false,
+                FogRendererContext::new
+            );
+        }
     }
     
     public static void update() {
+        if (swappingManager == null) {
+            init();
+        }
         swappingManager.setOuterDimension(RenderStates.originalPlayerDimension);
         swappingManager.resetChecks();
         if (ClientWorldLoader.getIsInitialized()) {
@@ -67,7 +67,7 @@ public class FogRendererContext {
     ) {
         Minecraft client = Minecraft.getInstance();
         
-        client.getProfiler().push("get_fog_color");
+        Profiler.get().push("get_fog_color");
         
         ClientLevel oldWorld = client.level;
         
@@ -88,7 +88,7 @@ public class FogRendererContext {
         ((IECamera) newCamera).portal_setFocusedEntity(client.cameraEntity);
         
         try {
-            FogRenderer.setupColor(
+            Vector4f color = FogRenderer.computeFogColor(
                 newCamera,
                 RenderStates.getPartialTick(),
                 destWorld,
@@ -96,20 +96,17 @@ public class FogRendererContext {
                 client.gameRenderer.getDarkenWorldAmount(RenderStates.getPartialTick())
             );
             
-            Vec3 result = getCurrentFogColor.get();
-            
-            return result;
+            return new Vec3(color.x(), color.y(), color.z());
         }
         finally {
             swappingManager.popSwapping();
             client.level = oldWorld;
             
-            client.getProfiler().pop();
+            Profiler.get().pop();
         }
     }
     
     public static void onPlayerTeleport(ResourceKey<Level> from, ResourceKey<Level> to) {
         swappingManager.updateOuterDimensionAndChangeContext(to);
     }
-    
 }

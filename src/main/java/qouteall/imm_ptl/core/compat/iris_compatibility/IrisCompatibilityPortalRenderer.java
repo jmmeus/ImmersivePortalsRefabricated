@@ -72,7 +72,7 @@ public class IrisCompatibilityPortalRenderer extends PortalRenderer {
         deferredBuffer.prepare();
         
         deferredBuffer.fb.setClearColor(1, 0, 0, 0);
-        deferredBuffer.fb.clear(Minecraft.ON_OSX);
+        deferredBuffer.fb.clear();
         
         IPPortingLibCompat.setIsStencilEnabled(
             client.getMainRenderTarget(), false
