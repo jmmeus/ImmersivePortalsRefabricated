@@ -123,8 +123,8 @@ public final class RectangularPortalShape implements PortalShape {
         Portal portal
     ) {
         return new Plane(
-            otherSideState.position(),
-            otherSideState.getNormal()
+            portal.getDestPos(),
+            portal.getContentDirection()
         );
     }
     
