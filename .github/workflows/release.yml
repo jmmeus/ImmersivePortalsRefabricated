@@ -27,17 +27,15 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: ${{ github.repository_owner }}/DimLib
+          ref: 1.21.1+support
           path: DimLib
-        continue-on-error: true
 
       - name: Build DimLib and Publish to MavenLocal
         run: |
-          if [ -d "DimLib" ] && [ -f "DimLib/gradlew" ]; then
-            cd DimLib
-            chmod +x ./gradlew
-            ./gradlew publishToMavenLocal || true
-            cd ..
-          fi
+          cd DimLib
+          chmod +x ./gradlew
+          ./gradlew publishToMavenLocal
+          cd ..
 
       - name: Make gradlew executable
         run: chmod +x ./gradlew
