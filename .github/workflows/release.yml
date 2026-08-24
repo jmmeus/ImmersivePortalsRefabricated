@@ -57,7 +57,7 @@ jobs:
             Download the JAR file below and place it in your `mods` folder.
 
             **Supported Minecraft Versions:**
-            - 1.21.2, 1.21.3
+            - 1.21.4
 
             **Requirements:**
             - Fabric Loader: 0.16.0+
