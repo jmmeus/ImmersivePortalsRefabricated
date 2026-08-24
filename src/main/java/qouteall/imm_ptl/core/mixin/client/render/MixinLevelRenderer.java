@@ -339,7 +339,7 @@ public abstract class MixinLevelRenderer implements IEWorldRenderer {
         at = @At("HEAD")
     )
     private void beforeRenderingWeather(
-        FrameGraphBuilder frameGraphBuilder, LightTexture lightTexture, Vec3 vec3, float f, FogParameters fogParameters, CallbackInfo ci
+        FrameGraphBuilder frameGraphBuilder, Vec3 vec3, float f, FogParameters fogParameters, CallbackInfo ci
     ) {
         if (PortalRendering.isRendering()) {
             RenderStates.isRenderingPortalWeather = true;
@@ -351,7 +351,7 @@ public abstract class MixinLevelRenderer implements IEWorldRenderer {
         at = @At("RETURN")
     )
     private void afterRenderingWeather(
-        FrameGraphBuilder frameGraphBuilder, LightTexture lightTexture, Vec3 vec3, float f, FogParameters fogParameters, CallbackInfo ci
+        FrameGraphBuilder frameGraphBuilder, Vec3 vec3, float f, FogParameters fogParameters, CallbackInfo ci
     ) {
         if (PortalRendering.isRendering()) {
             RenderStates.isRenderingPortalWeather = false;

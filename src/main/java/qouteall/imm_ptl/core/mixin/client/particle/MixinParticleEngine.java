@@ -7,7 +7,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.particle.Particle;
 import net.minecraft.client.particle.ParticleEngine;
-import net.minecraft.client.renderer.LightTexture;
+import net.minecraft.client.renderer.MultiBufferSource;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -30,7 +30,7 @@ public class MixinParticleEngine implements IEParticleManager {
         cancellable = true
     )
     private void onBeginRenderParticles(
-        LightTexture lightTexture, Camera camera, float f, CallbackInfo ci
+        Camera camera, float f, MultiBufferSource.BufferSource bufferSource, CallbackInfo ci
     ) {
         if (PortalRendering.isRendering()) {
             if (RenderStates.getRenderedPortalNum() > 4) {
@@ -41,14 +41,27 @@ public class MixinParticleEngine implements IEParticleManager {
     
     // maybe incompatible with sodium and iris
     @WrapWithCondition(
-        method = "render",
+        method = "renderParticleType",
         at = @At(
             value = "INVOKE",
             target = "Lnet/minecraft/client/particle/Particle;render(Lcom/mojang/blaze3d/vertex/VertexConsumer;Lnet/minecraft/client/Camera;F)V"
         )
     )
-    private boolean redirectBuildGeometry(
+    private static boolean redirectBuildGeometry(
         Particle instance, VertexConsumer vertexConsumer, Camera camera, float v
+    ) {
+        return RenderStates.shouldRenderParticle(instance);
+    }
+    
+    @WrapWithCondition(
+        method = "renderCustomParticles",
+        at = @At(
+            value = "INVOKE",
+            target = "Lnet/minecraft/client/particle/Particle;renderCustom(Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/MultiBufferSource;Lnet/minecraft/client/Camera;F)V"
+        )
+    )
+    private static boolean redirectBuildGeometryCustom(
+        Particle instance, com.mojang.blaze3d.vertex.PoseStack poseStack, MultiBufferSource bufferSource, Camera camera, float v
     ) {
         return RenderStates.shouldRenderParticle(instance);
     }

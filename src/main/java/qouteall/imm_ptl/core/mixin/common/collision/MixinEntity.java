@@ -54,6 +54,9 @@ public abstract class MixinEntity implements IEEntity, ImmPtlEntityExtension {
     public abstract AABB getBoundingBox();
     
     @Shadow
+    protected abstract AABB makeBoundingBox(Vec3 vec3);
+    
+    @Shadow
     public abstract Component getName();
     
     @Shadow
@@ -172,12 +175,13 @@ public abstract class MixinEntity implements IEEntity, ImmPtlEntityExtension {
         method = "checkInsideBlocks(Ljava/util/List;Ljava/util/Set;)V",
         at = @At(
             value = "INVOKE",
-            target = "Lnet/minecraft/world/entity/Entity;getBoundingBox()Lnet/minecraft/world/phys/AABB;"
+            target = "Lnet/minecraft/world/entity/Entity;makeBoundingBox(Lnet/minecraft/world/phys/Vec3;)Lnet/minecraft/world/phys/AABB;"
         )
     )
-    private AABB redirectBoundingBoxInCheckingBlockCollision(Entity entity) {
-        AABB box = ip_getActiveCollisionBox(entity.getBoundingBox());
-        return box != null ? box : entity.getBoundingBox();
+    private AABB redirectBoundingBoxInCheckingBlockCollision(Entity entity, Vec3 to) {
+        AABB originalBox = makeBoundingBox(to);
+        AABB box = ip_getActiveCollisionBox(originalBox);
+        return box != null ? box : originalBox;
     }
     
     // avoid suffocation when colliding with a portal on wall
