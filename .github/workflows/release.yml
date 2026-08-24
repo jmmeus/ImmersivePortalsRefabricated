@@ -1,0 +1,77 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: 21
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Checkout DimLib
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository_owner }}/DimLib
+          path: DimLib
+        continue-on-error: true
+
+      - name: Build DimLib and Publish to MavenLocal
+        run: |
+          if [ -d "DimLib" ] && [ -f "DimLib/gradlew" ]; then
+            cd DimLib
+            chmod +x ./gradlew
+            ./gradlew publishToMavenLocal || true
+            cd ..
+          fi
+
+      - name: Make gradlew executable
+        run: chmod +x ./gradlew
+
+      - name: Build with Gradle
+        run: ./gradlew build
+
+      - name: Extract version from tag
+        id: version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Immersive Portals ${{ steps.version.outputs.VERSION }}
+          body: |
+            ## Immersive Portals ${{ steps.version.outputs.VERSION }}
+
+            Download the JAR file below and place it in your `mods` folder.
+
+            **Supported Minecraft Versions:**
+            - 1.21.2, 1.21.3
+
+            **Requirements:**
+            - Fabric Loader: 0.16.0+
+            - Fabric API: Required
+            - Java: 21+
+
+            **Included Libraries:**
+            - DimLib is bundled inside this mod JAR (Jar-in-Jar).
+
+            **Changes:**
+            See commit history for details.
+          files: |
+            build/libs/*.jar
+          draft: false
+          prerelease: ${{ contains(steps.version.outputs.VERSION, 'alpha') || contains(steps.version.outputs.VERSION, 'beta') }}
