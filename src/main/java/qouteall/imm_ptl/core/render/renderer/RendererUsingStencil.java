@@ -1,12 +1,14 @@
 package qouteall.imm_ptl.core.render.renderer;
 
-import com.mojang.blaze3d.platform.GlStateManager;
+import com.mojang.blaze3d.opengl.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.Minecraft;
 import net.minecraft.util.profiling.Profiler;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
 import org.lwjgl.opengl.GL11;
+import net.minecraft.client.multiplayer.ClientLevel;
+import qouteall.imm_ptl.core.ClientWorldLoader;
 import qouteall.imm_ptl.core.CHelper;
 import qouteall.imm_ptl.core.compat.IPPortingLibCompat;
 import qouteall.imm_ptl.core.portal.Portal;
@@ -34,15 +36,7 @@ public class RendererUsingStencil extends PortalRenderer {
     
     @Override
     public boolean replaceFrameBufferClearing() {
-        boolean skipClearing = WorldRenderInfo.isRendering();
-        if (skipClearing) {
-            if (WorldRenderInfo.getTopRenderInfo().doRenderSky) {
-                RenderSystem.depthMask(false);
-                MyRenderHelper.renderScreenTriangle(FogRendererContext.getFogColorOf(client.level, CHelper.getCurrentCameraPos()));
-                RenderSystem.depthMask(true);
-            }
-        }
-        return skipClearing;
+        return WorldRenderInfo.isRendering();
     }
     
     @Override
@@ -55,11 +49,12 @@ public class RendererUsingStencil extends PortalRenderer {
         // use GlStateManager.disableDepthTest() instead
         // because GlStateManager will cache its state.
         // Do not make its cache not synchronized
-        RenderSystem.enableDepthTest();
-        RenderSystem.depthMask(true);
+        GlStateManager._enableDepthTest();
+        GlStateManager._depthMask(true);
         
         Profiler.get().popPush("render_portal_total");
         renderPortals(modelView);
+        CHelper.bindRenderTarget(client.getMainRenderTarget());
         if (PortalRendering.isRendering()) {
             setStencilStateForWorldRendering();
         }
@@ -98,7 +93,7 @@ public class RendererUsingStencil extends PortalRenderer {
             }
         }
         
-        client.getMainRenderTarget().bindWrite(false);
+        CHelper.bindRenderTarget(client.getMainRenderTarget());
         
         GL11.glClearStencil(0);
         GL11.glClear(GL11.GL_STENCIL_BUFFER_BIT);
@@ -158,6 +153,8 @@ public class RendererUsingStencil extends PortalRenderer {
         
         renderPortalContent(portal);
         
+        CHelper.bindRenderTarget(client.getMainRenderTarget());
+        
         PortalRendering.popPortalLayer();
         // pop portal layer before restoring depth, for clipping, see ViewAreaRenderer
         
@@ -166,6 +163,8 @@ public class RendererUsingStencil extends PortalRenderer {
         }
         
         clampStencilValue(outerPortalStencilValue);
+        
+        CHelper.bindRenderTarget(client.getMainRenderTarget());
     }
     
     @Override
@@ -196,7 +195,7 @@ public class RendererUsingStencil extends PortalRenderer {
             portal, Vec3.ZERO,
             modelView,
             RenderSystem.getProjectionMatrix(),
-            true, true,
+            true, false,
             true, true
         );
     }
@@ -209,9 +208,6 @@ public class RendererUsingStencil extends PortalRenderer {
         
         setStencilStateForWorldRendering();
         
-        //do not manipulate color buffer
-        GL11.glColorMask(false, false, false, false);
-        
         //save the state
         int originalDepthFunc = GL11.glGetInteger(GL_DEPTH_FUNC);
         
@@ -221,10 +217,13 @@ public class RendererUsingStencil extends PortalRenderer {
         //the pixel's depth will be 1, which is the furthest
         GL11.glDepthRange(1, 1);
         
-        MyRenderHelper.renderScreenTriangle();
+        ClientLevel destWorld = ClientWorldLoader.getWorld(portal.getDestDim());
+        Vec3 destFogColor = FogRendererContext.getFogColorOf(destWorld, portal.getDestPos());
+        
+        GL11.glColorMask(true, true, true, true);
+        MyRenderHelper.renderScreenTriangle(destFogColor);
         
         //retrieve the state
-        GL11.glColorMask(true, true, true, true);
         GL11.glDepthFunc(originalDepthFunc);
         GL11.glDepthRange(0, 1);
     }

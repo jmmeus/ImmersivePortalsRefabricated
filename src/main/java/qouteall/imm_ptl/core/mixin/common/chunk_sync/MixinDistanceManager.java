@@ -9,7 +9,7 @@ import net.minecraft.server.level.DistanceManager;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.level.Ticket;
-import net.minecraft.util.SortedArraySet;
+import net.minecraft.world.level.TicketStorage;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -22,6 +22,9 @@ import qouteall.imm_ptl.core.ducks.IEChunkMap;
 import qouteall.imm_ptl.core.ducks.IEDistanceManager;
 import qouteall.imm_ptl.core.platform_specific.IPConfig;
 
+import java.util.List;
+import java.util.concurrent.Executor;
+
 @Mixin(DistanceManager.class)
 public abstract class MixinDistanceManager implements IEDistanceManager {
     
@@ -30,10 +33,15 @@ public abstract class MixinDistanceManager implements IEDistanceManager {
     private Long2ObjectMap<ObjectSet<ServerPlayer>> playersPerChunk;
     
     @Shadow
-    protected abstract SortedArraySet<Ticket<?>> getTickets(long position);
+    @Final
+    private TicketStorage ticketStorage;
+    
+    @Shadow
+    @Final
+    private Executor mainThreadExecutor;
     
     // avoid NPE
-    @Inject(method = "Lnet/minecraft/server/level/DistanceManager;removePlayer(Lnet/minecraft/core/SectionPos;Lnet/minecraft/server/level/ServerPlayer;)V", at = @At("HEAD"))
+    @Inject(method = "removePlayer(Lnet/minecraft/core/SectionPos;Lnet/minecraft/server/level/ServerPlayer;)V", at = @At("HEAD"))
     private void onHandleChunkLeave(
         SectionPos sectionPos,
         ServerPlayer serverPlayer,
@@ -55,7 +63,17 @@ public abstract class MixinDistanceManager implements IEDistanceManager {
     }
     
     @Override
-    public SortedArraySet<Ticket<?>> portal_getTicketSet(long chunkPos) {
-        return getTickets(chunkPos);
+    public List<Ticket> portal_getTickets(long chunkPos) {
+        return ticketStorage.getTickets(chunkPos);
+    }
+    
+    @Override
+    public TicketStorage portal_getTicketStorage() {
+        return ticketStorage;
+    }
+    
+    @Override
+    public Executor ip_getMainThreadExecutor() {
+        return mainThreadExecutor;
     }
 }

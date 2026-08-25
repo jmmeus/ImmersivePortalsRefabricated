@@ -20,20 +20,8 @@ public class MixinSodiumViewport {
         Frustum instance,
         float minX, float minY, float minZ, float maxX, float maxY, float maxZ
     ) {
-        boolean inFrustum = instance.testAab(
+        return instance.testAab(
             minX, minY, minZ, maxX, maxY, maxZ
         );
-        
-        if (inFrustum) {
-            if (SodiumInterface.frustumCuller != null) {
-                boolean canDetermineInvisible =
-                    SodiumInterface.frustumCuller.canDetermineInvisibleWithCameraCoord(
-                        minX, minY, minZ, maxX, maxY, maxZ
-                    );
-                return !canDetermineInvisible;
-            }
-        }
-        
-        return inFrustum;
     }
 }

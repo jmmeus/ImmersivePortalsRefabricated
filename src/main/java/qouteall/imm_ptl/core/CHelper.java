@@ -190,4 +190,36 @@ public class CHelper {
         return dimIconPath;
     }
     
+    public static int getFbo(com.mojang.blaze3d.pipeline.RenderTarget target) {
+        if (target.getColorTexture() instanceof com.mojang.blaze3d.opengl.GlTexture glTexture) {
+            if (com.mojang.blaze3d.systems.RenderSystem.getDevice() instanceof com.mojang.blaze3d.opengl.GlDevice glDevice) {
+                return glTexture.getFbo(glDevice.directStateAccess(), target.getDepthTexture());
+            }
+        }
+        return 0;
+    }
+    
+    public static void bindRenderTarget(com.mojang.blaze3d.pipeline.RenderTarget target) {
+        int fbo = getFbo(target);
+        com.mojang.blaze3d.opengl.GlStateManager._glBindFramebuffer(org.lwjgl.opengl.GL30C.GL_FRAMEBUFFER, fbo);
+        com.mojang.blaze3d.opengl.GlStateManager._viewport(0, 0, target.width, target.height);
+    }
+    
+    public static void unbindRenderTarget() {
+        com.mojang.blaze3d.opengl.GlStateManager._glBindFramebuffer(org.lwjgl.opengl.GL30C.GL_FRAMEBUFFER, 0);
+    }
+    
+    public static void clearRenderTarget(com.mojang.blaze3d.pipeline.RenderTarget target, float r, float g, float b, float a) {
+        bindRenderTarget(target);
+        GL11.glClearColor(r, g, b, a);
+        GL11.glClearDepth(1.0);
+        com.mojang.blaze3d.opengl.GlStateManager._clear(GL11.GL_COLOR_BUFFER_BIT | (target.useDepth ? GL11.GL_DEPTH_BUFFER_BIT : 0));
+    }
+    
+    public static int getGlTextureId(com.mojang.blaze3d.textures.GpuTexture texture) {
+        if (texture instanceof com.mojang.blaze3d.opengl.GlTexture glTexture) {
+            return glTexture.glId();
+        }
+        return 0;
+    }
 }

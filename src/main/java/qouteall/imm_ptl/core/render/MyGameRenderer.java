@@ -167,7 +167,7 @@ public class MyGameRenderer {
         
         ObjectArrayList<SectionRenderDispatcher.RenderSection> newChunkInfoList =
             VisibleSectionDiscovery.takeList();
-        ((IEWorldRenderer) oldWorldRenderer).portal_setChunkInfoList(newChunkInfoList);
+        ((IEWorldRenderer) worldRenderer).portal_setChunkInfoList(newChunkInfoList);
         
         Object irisPipeline = IrisInterface.invoker.getPipeline(worldRenderer);
         
@@ -236,6 +236,8 @@ public class MyGameRenderer {
             );
             Profiler.get().pop();
         });
+        
+        CHelper.bindRenderTarget(client.getMainRenderTarget());
         
         SodiumInterface.invoker.switchContextWithCurrentWorldRenderer(newSodiumContext);
         

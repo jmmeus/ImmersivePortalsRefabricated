@@ -1,6 +1,6 @@
 package qouteall.imm_ptl.core.render.renderer;
 
-import com.mojang.blaze3d.platform.GlStateManager;
+import com.mojang.blaze3d.opengl.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.fabricmc.fabric.api.event.Event;
@@ -90,7 +90,7 @@ public abstract class PortalRenderer {
                 RenderSystem.getProjectionMatrix()
             );
             
-            Vec3 cameraPos = client.gameRenderer.getMainCamera().getPosition();
+            Vec3 cameraPos = CHelper.getCurrentCameraPos();
             frustum.prepare(cameraPos.x, cameraPos.y, cameraPos.z);
             
             return frustum;
@@ -136,7 +136,7 @@ public abstract class PortalRenderer {
             return true;
         }
         
-        Vec3 cameraPos = TransformationManager.getIsometricAdjustedCameraPos();
+        Vec3 cameraPos = CHelper.getCurrentCameraPos();
         
         if (!portal.isRoughlyVisibleTo(cameraPos)) {
             return true;
@@ -155,7 +155,7 @@ public abstract class PortalRenderer {
             return true;
         }
         
-        if (IPCGlobal.earlyFrustumCullingPortal) {
+        if (IPCGlobal.earlyFrustumCullingPortal && !PortalRendering.isRendering()) {
             // frustum culling does not work when portal is very close
             if (distance > 0.1) {
                 Frustum frustum = frustumSupplier.get();

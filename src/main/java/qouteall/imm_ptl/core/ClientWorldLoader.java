@@ -400,7 +400,7 @@ public class ClientWorldLoader {
         
         Profiler.get().push("create_world");
         
-        int chunkLoadDistance = 3; // my own chunk manager doesn't need it
+        int chunkLoadDistance = CLIENT.options.getEffectiveRenderDistance();
         
         LevelRenderer worldRenderer = new LevelRenderer(
             CLIENT,

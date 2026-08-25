@@ -7,7 +7,6 @@ import com.mojang.blaze3d.platform.Lighting;
 import com.mojang.blaze3d.resource.GraphicsResourceAllocator;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexBuffer;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.client.Camera;
 import net.minecraft.client.DeltaTracker;
@@ -262,21 +261,6 @@ public abstract class MixinLevelRenderer implements IEWorldRenderer {
                     Profiler.get().pop();
                 }
             }
-        }
-    }
-    
-    @Redirect(
-        method = {"method_62218", "renderLevel"},
-        at = @At(
-            value = "INVOKE",
-            target = "Lcom/mojang/blaze3d/systems/RenderSystem;clear(I)V",
-            remap = false
-        ),
-        require = 0
-    )
-    private static void redirectClearing(int int_1) {
-        if (!IPCGlobal.renderer.replaceFrameBufferClearing()) {
-            RenderSystem.clear(int_1);
         }
     }
     

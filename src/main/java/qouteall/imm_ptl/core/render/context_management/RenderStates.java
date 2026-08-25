@@ -57,6 +57,7 @@ public class RenderStates {
     private static float partialTick = 0;
     
     public static Set<ResourceKey<Level>> renderedDimensions = new HashSet<>();
+    public static List<Portal> renderedPortals = new ArrayList<>();
     public static List<List<WeakReference<Portal>>> lastPortalRenderInfos = new ArrayList<>();
     public static List<List<WeakReference<Portal>>> portalRenderInfos = new ArrayList<>();
     public static int portalsRenderedThisFrame = 0;// mixins to sodium use that
@@ -103,6 +104,7 @@ public class RenderStates {
         partialTick = newPartialTick;
         
         renderedDimensions.clear();
+        renderedPortals.clear();
         lastPortalRenderInfos = portalRenderInfos;
         portalRenderInfos = new ArrayList<>();
         portalsRenderedThisFrame = 0;

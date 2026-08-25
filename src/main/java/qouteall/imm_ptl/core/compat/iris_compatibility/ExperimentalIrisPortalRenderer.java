@@ -1,6 +1,6 @@
 package qouteall.imm_ptl.core.compat.iris_compatibility;
 
-import com.mojang.blaze3d.platform.GlStateManager;
+import com.mojang.blaze3d.opengl.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.irisshaders.iris.Iris;
 import net.irisshaders.iris.pipeline.IrisRenderingPipeline;
@@ -10,6 +10,7 @@ import net.minecraft.util.profiling.Profiler;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
 import org.lwjgl.opengl.GL11;
+import qouteall.imm_ptl.core.CHelper;
 import qouteall.imm_ptl.core.compat.IPPortingLibCompat;
 import qouteall.imm_ptl.core.portal.Portal;
 import qouteall.imm_ptl.core.portal.PortalRenderInfo;
@@ -83,7 +84,7 @@ public class ExperimentalIrisPortalRenderer extends PortalRenderer {
             IPPortingLibCompat.setIsStencilEnabled(client.getMainRenderTarget(), true);
         }
         
-        client.getMainRenderTarget().bindWrite(false);
+        CHelper.bindRenderTarget(client.getMainRenderTarget());
         
         GL11.glClearStencil(0);
         GL11.glClear(GL11.GL_STENCIL_BUFFER_BIT);
@@ -101,7 +102,7 @@ public class ExperimentalIrisPortalRenderer extends PortalRenderer {
     protected void restoreDepthOfPortalViewArea(
         Portal portal, Matrix4f modelView
     ) {
-        client.getMainRenderTarget().bindWrite(false);
+        CHelper.bindRenderTarget(client.getMainRenderTarget());
         
         setStencilStateForWorldRendering();
         
@@ -162,8 +163,8 @@ public class ExperimentalIrisPortalRenderer extends PortalRenderer {
     }
     
     protected void doPortalRendering(Matrix4f modelView) {
-        RenderSystem.enableDepthTest();
-        RenderSystem.depthMask(true);
+        GlStateManager._enableDepthTest();
+        GlStateManager._depthMask(true);
         
         Profiler.get().popPush("render_portal_total");
         renderPortals(modelView);

@@ -74,6 +74,13 @@ public class PortalRendering {
         return IPGlobal.maxPortalLayer;
     }
     
+    public static @Nullable Portal getActiveClippingPortal() {
+        if (!isRendering()) {
+            return null;
+        }
+        return getRenderingPortal();
+    }
+    
     /**
      * @return The innermost portal that's currently being rendered.
      * Must use after checking {@link #isRendering()}

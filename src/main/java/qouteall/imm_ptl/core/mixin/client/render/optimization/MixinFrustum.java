@@ -94,13 +94,16 @@ public class MixinFrustum implements IEFrustum {
         }
     }
     
+    @Shadow
+    private org.joml.FrustumIntersection intersection;
+    
     // with scaling transformation, the view vector may be not unit-len
     @Inject(
         method = "calculateFrustum",
         at = @At("RETURN")
     )
     private void onCalculateFrustumReturn(
-        Matrix4f matrix4f, Matrix4f matrix4f2, CallbackInfo ci
+        Matrix4f modelView, Matrix4f projection, CallbackInfo ci
     ) {
         viewVector.normalize();
     }

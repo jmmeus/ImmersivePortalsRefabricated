@@ -69,20 +69,6 @@ public class MixinLevelRenderer_Optional {
         chunkBuilder.setCamera(cameraPosition);
     }
     
-    @Inject(
-        method = "renderSectionLayer",
-        at = @At(
-            value = "INVOKE",
-            target = "Lnet/minecraft/client/renderer/CompiledShaderProgram;apply()V"
-        ),
-        require = 0
-    )
-    private void onGetShaderInRenderingLayer(
-        RenderType renderType, double x, double y, double z, Matrix4f projectionMatrix, Matrix4f frustrumMatrix, CallbackInfo ci
-    ) {
-        FrontClipping.updateClippingEquationUniformForCurrentShader(false);
-    }
-    
     // correct the position of updating ViewArea
     @Redirect(
         method = "setupRender",

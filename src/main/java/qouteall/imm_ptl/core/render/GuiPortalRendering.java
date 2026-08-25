@@ -1,7 +1,7 @@
 package qouteall.imm_ptl.core.render;
 
 import com.mojang.blaze3d.pipeline.RenderTarget;
-import com.mojang.blaze3d.platform.GlStateManager;
+import com.mojang.blaze3d.opengl.GlStateManager;
 import com.mojang.logging.LogUtils;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
@@ -61,11 +61,10 @@ public class GuiPortalRendering {
         if (!worldRenderInfo.doRenderSky) {
             // pre-clear the framebuffer with 0 alpha, if it doesn't render the sky
             GlStateManager._colorMask(true, true, true, true);
-            framebuffer.setClearColor(0, 0, 0, 0);
-            framebuffer.clear();
+            CHelper.clearRenderTarget(framebuffer, 0, 0, 0, 0);
         }
         
-        framebuffer.bindWrite(true);
+        CHelper.bindRenderTarget(framebuffer);
         
         IPCGlobal.renderer.prepareRendering();
         
@@ -75,7 +74,7 @@ public class GuiPortalRendering {
         
         ((IEMinecraftClient) MyGameRenderer.client).ip_setFrameBuffer(mcFb);
         
-        mcFb.bindWrite(true);
+        CHelper.bindRenderTarget(mcFb);
         
         renderingFrameBuffer = null;
         

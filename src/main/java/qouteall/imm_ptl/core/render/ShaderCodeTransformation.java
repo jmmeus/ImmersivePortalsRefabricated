@@ -1,6 +1,6 @@
 package qouteall.imm_ptl.core.render;
 
-import com.mojang.blaze3d.shaders.CompiledShader;
+import com.mojang.blaze3d.shaders.ShaderType;
 import com.mojang.logging.LogUtils;
 import me.shedaniel.cloth.clothconfig.shadowed.org.yaml.snakeyaml.Yaml;
 import org.jetbrains.annotations.Nullable;
@@ -15,16 +15,16 @@ import java.util.Set;
 public class ShaderCodeTransformation {
     private static final Logger LOGGER = LogUtils.getLogger();
     
-    public static enum ShaderType {
+    public static enum MyShaderType {
         vs, fs
     }
     
-    private static boolean matches(ShaderType me, CompiledShader.Type type) {
-        if (type == CompiledShader.Type.FRAGMENT) {
-            return me == ShaderType.fs;
+    private static boolean matches(MyShaderType me, ShaderType type) {
+        if (type == ShaderType.FRAGMENT) {
+            return me == MyShaderType.fs;
         }
-        else if (type == CompiledShader.Type.VERTEX) {
-            return me == ShaderType.vs;
+        else if (type == ShaderType.VERTEX) {
+            return me == MyShaderType.vs;
         }
         return false;
     }
@@ -43,7 +43,7 @@ public class ShaderCodeTransformation {
     
     public static class Config {
         public String comment;
-        public ShaderType type;
+        public MyShaderType type;
         public Set<String> affectedShaders;
         public List<TransformationEntry> transformations;
         public boolean debugOutput;
@@ -69,7 +69,7 @@ public class ShaderCodeTransformation {
         }
     }
     
-    public static String transform(CompiledShader.Type type, String shaderId, String inputCode) {
+    public static String transform(ShaderType type, String shaderId, String inputCode) {
         if (configs == null) {
             LOGGER.info("Shader Transform Skipping {}", shaderId);
             return inputCode;
@@ -96,7 +96,7 @@ public class ShaderCodeTransformation {
     }
     
     @Nullable
-    private static Config getConfig(CompiledShader.Type type, String shaderId) {
+    private static Config getConfig(ShaderType type, String shaderId) {
         String cleanId = shaderId.replace("minecraft:", "").replace("immersive_portals:", "").replace("core/", "");
         return configs.stream().filter(
             config -> matches(config.type, type) && (

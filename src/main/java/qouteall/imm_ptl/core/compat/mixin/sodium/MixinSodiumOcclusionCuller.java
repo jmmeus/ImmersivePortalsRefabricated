@@ -55,16 +55,17 @@ public abstract class MixinSodiumOcclusionCuller {
             ip_modifiedStartPoint = portal.getPortalShape().getModifiedVisibleSectionIterationOrigin(
                 portal, cameraPos
             );
-            if (ip_modifiedStartPoint != null) {
-                doUseOcclusionCulling = false;
-                
-                RenderSection renderSection = getRenderSection(
-                    ip_modifiedStartPoint.x(), ip_modifiedStartPoint.y(), ip_modifiedStartPoint.z()
+            if (ip_modifiedStartPoint == null) {
+                Vec3 destPos = portal.getDestPos();
+                ip_modifiedStartPoint = SectionPos.of(
+                    (int) Math.floor(destPos.x) >> 4,
+                    (int) Math.floor(destPos.y) >> 4,
+                    (int) Math.floor(destPos.z) >> 4
                 );
-                if (renderSection != null && !isWithinFrustum(viewport, renderSection)) {
-                    ip_tolerantInitialFrustumTestFail = true;
-                }
             }
+            
+            doUseOcclusionCulling = false;
+            ip_tolerantInitialFrustumTestFail = true;
         }
         
         return doUseOcclusionCulling;
@@ -102,6 +103,44 @@ public abstract class MixinSodiumOcclusionCuller {
             return ip_modifiedStartPoint;
         }
         
+        return instance.getChunkCoord();
+    }
+
+    @Redirect(
+        method = "processQueue",
+        at = @At(
+            value = "INVOKE",
+            target = "Lnet/caffeinemc/mods/sodium/client/render/viewport/Viewport;getChunkCoord()Lnet/minecraft/core/SectionPos;",
+            remap = true
+        ),
+        remap = false
+    )
+    private static SectionPos redirectGetChunkCoordInProcessQueue(Viewport instance) {
+        if (PortalRendering.isRendering()) {
+            Portal portal = PortalRendering.getRenderingPortal();
+            Vec3 destPos = portal.getDestPos();
+            return SectionPos.of(
+                (int) Math.floor(destPos.x) >> 4,
+                (int) Math.floor(destPos.y) >> 4,
+                (int) Math.floor(destPos.z) >> 4
+            );
+        }
+        return instance.getChunkCoord();
+    }
+
+    @Redirect(
+        method = "addNearbySections",
+        at = @At(
+            value = "INVOKE",
+            target = "Lnet/caffeinemc/mods/sodium/client/render/viewport/Viewport;getChunkCoord()Lnet/minecraft/core/SectionPos;",
+            remap = true
+        ),
+        remap = false
+    )
+    private SectionPos redirectGetChunkCoordInAddNearbySections(Viewport instance) {
+        if (ip_modifiedStartPoint != null) {
+            return ip_modifiedStartPoint;
+        }
         return instance.getChunkCoord();
     }
     

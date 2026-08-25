@@ -1,6 +1,5 @@
 package qouteall.imm_ptl.core.render.context_management;
 
-import com.mojang.blaze3d.vertex.VertexBuffer;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
@@ -23,7 +22,7 @@ public class CloudContext {
     public ResourceKey<Level> dimension = null;
     public Vec3 cloudColor;
     
-    public VertexBuffer cloudsBuffer = null;
+    public AutoCloseable cloudsBuffer = null;
     
     public static final ArrayList<CloudContext> contexts = new ArrayList<>();
     
@@ -45,7 +44,11 @@ public class CloudContext {
     
     public void dispose() {
         if (cloudsBuffer != null) {
-            cloudsBuffer.close();
+            try {
+                cloudsBuffer.close();
+            }
+            catch (Exception ignored) {
+            }
             cloudsBuffer = null;
         }
     }

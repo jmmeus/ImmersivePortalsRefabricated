@@ -102,7 +102,7 @@ public class PortalWandItem extends Item {
         public static final Mode FALLBACK = CREATE_PORTAL;
         
         public static Mode fromTag(CompoundTag tag) {
-            String mode = tag.getString("mode");
+            String mode = tag.getStringOr("mode", "");
             
             return fromStr(mode);
         }
@@ -220,21 +220,20 @@ public class PortalWandItem extends Item {
             }
         }
     }
-    
-    @Environment(EnvType.CLIENT)
     @Override
     public void appendHoverText(
         ItemStack stack, Item.TooltipContext tooltipContext,
-        List<Component> tooltip, TooltipFlag tooltipFlag
+        net.minecraft.world.item.component.TooltipDisplay tooltipDisplay,
+        java.util.function.Consumer<Component> tooltip, TooltipFlag tooltipFlag
     ) {
-        super.appendHoverText(stack, tooltipContext, tooltip, tooltipFlag);
+        super.appendHoverText(stack, tooltipContext, tooltipDisplay, tooltip, tooltipFlag);
         
-        tooltip.add(Component.translatable(
+        tooltip.accept(Component.translatable(
             "imm_ptl.wand.item_desc_1",
             Minecraft.getInstance().options.keyShift.getTranslatedKeyMessage(),
             Minecraft.getInstance().options.keyUse.getTranslatedKeyMessage()
         ));
-        tooltip.add(Component.translatable(
+        tooltip.accept(Component.translatable(
             "imm_ptl.wand.item_desc_2",
             Minecraft.getInstance().options.keyShift.getTranslatedKeyMessage(),
             Minecraft.getInstance().options.keyAttack.getTranslatedKeyMessage()

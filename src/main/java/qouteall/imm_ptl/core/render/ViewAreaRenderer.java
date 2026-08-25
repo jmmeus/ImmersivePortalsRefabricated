@@ -1,14 +1,11 @@
 package qouteall.imm_ptl.core.render;
 
-import com.mojang.blaze3d.platform.GlStateManager;
+import com.mojang.blaze3d.opengl.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.BufferBuilder;
-import com.mojang.blaze3d.vertex.BufferUploader;
-import com.mojang.blaze3d.vertex.DefaultVertexFormat;
-import com.mojang.blaze3d.vertex.Tesselator;
-import com.mojang.blaze3d.vertex.VertexFormat;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.CompiledShaderProgram;
+import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
 import qouteall.imm_ptl.core.CHelper;
@@ -16,6 +13,7 @@ import qouteall.imm_ptl.core.IPGlobal;
 import qouteall.imm_ptl.core.portal.Portal;
 import qouteall.imm_ptl.core.render.context_management.PortalRendering;
 import qouteall.imm_ptl.core.render.context_management.RenderStates;
+import qouteall.imm_ptl.core.render.renderer.PortalRenderer;
 import qouteall.q_misc_util.my_util.TriangleConsumer;
 
 import java.util.Objects;
@@ -31,6 +29,9 @@ public class ViewAreaRenderer {
         
         if (doFaceCulling) {
             GlStateManager._enableCull();
+            if (PortalRendering.isRenderingOddNumberOfMirrors()) {
+                MyRenderHelper.applyMirrorFaceCulling();
+            }
         }
         else {
             GlStateManager._disableCull();
@@ -60,11 +61,6 @@ public class ViewAreaRenderer {
             GlStateManager._depthMask(false);
         }
         
-        boolean shouldReverseCull = PortalRendering.isRenderingOddNumberOfMirrors();
-        if (shouldReverseCull) {
-            MyRenderHelper.applyMirrorFaceCulling();
-        }
-        
         if (doClip) {
             if (PortalRendering.isRendering()) {
                 FrontClipping.setupInnerClipping(
@@ -81,37 +77,23 @@ public class ViewAreaRenderer {
         
         CHelper.enableDepthClamp();
         
-        CompiledShaderProgram shader = RenderSystem.setShader(MyRenderHelper.PORTAL_AREA);
-        
-        if (shader.MODEL_VIEW_MATRIX != null) {
-            shader.MODEL_VIEW_MATRIX.set(modelViewMatrix);
-        }
-        if (shader.PROJECTION_MATRIX != null) {
-            shader.PROJECTION_MATRIX.set(projectionMatrix);
-        }
-        
-        FrontClipping.updateClippingEquationUniformForCurrentShader(false);
-        
-        shader.apply();
-        
         ViewAreaRenderer.buildPortalViewAreaTrianglesBuffer(
             fogColor,
             portal,
             CHelper.getCurrentCameraPos(),
-            RenderStates.getPartialTick()
+            RenderStates.getPartialTick(),
+            modelViewMatrix,
+            projectionMatrix
         );
         
-        shader.clear();
-        
         GlStateManager._enableCull();
+        if (PortalRendering.isRenderingOddNumberOfMirrors()) {
+            MyRenderHelper.recoverFaceCulling();
+        }
         CHelper.disableDepthClamp();
         
         GlStateManager._colorMask(true, true, true, true);
         GlStateManager._depthMask(true);
-        
-        if (shouldReverseCull) {
-            MyRenderHelper.recoverFaceCulling();
-        }
         
         if (PortalRendering.isRendering()) {
             FrontClipping.disableClipping();
@@ -122,29 +104,15 @@ public class ViewAreaRenderer {
     
     public static void buildPortalViewAreaTrianglesBuffer(
         Vec3 fogColor, Portal portal,
-        Vec3 cameraPos, float partialTick
+        Vec3 cameraPos, float partialTick,
+        Matrix4f modelViewMatrix, Matrix4f projectionMatrix
     ) {
-        Tesselator tessellator = RenderSystem.renderThreadTesselator();
-        BufferBuilder bufferBuilder = tessellator
-            .begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
-        
-        Vec3 originRelativeToCamera = portal.getOriginPos().subtract(cameraPos);
-        
-        TriangleConsumer vertexOutput = (p0x, p0y, p0z, p1x, p1y, p1z, p2x, p2y, p2z) -> {
-            bufferBuilder
-                .addVertex((float) p0x, (float) p0y, (float) p0z)
-                .setColor((float) fogColor.x, (float) fogColor.y, (float) fogColor.z, 1.0f);
-            bufferBuilder
-                .addVertex((float) p1x, (float) p1y, (float) p1z)
-                .setColor((float) fogColor.x, (float) fogColor.y, (float) fogColor.z, 1.0f);
-            bufferBuilder
-                .addVertex((float) p2x, (float) p2y, (float) p2z)
-                .setColor((float) fogColor.x, (float) fogColor.y, (float) fogColor.z, 1.0f);
-        };
-        
-        portal.renderViewAreaMesh(originRelativeToCamera, vertexOutput);
-        
-        BufferUploader.draw(Objects.requireNonNull(bufferBuilder.build()));
+        IPPortalShaders.renderPortalAreaTriangles(
+            portal,
+            (float) fogColor.x, (float) fogColor.y, (float) fogColor.z, 1.0f,
+            modelViewMatrix,
+            projectionMatrix
+        );
     }
     
     public static void outputTriangle(

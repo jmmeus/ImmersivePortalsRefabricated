@@ -1,6 +1,7 @@
 package qouteall.imm_ptl.core.mixin.common.collision;
 
 import com.llamalad7.mixinextras.sugar.Local;
+import com.mojang.logging.LogUtils;
 import net.minecraft.core.BlockPos;
 import java.util.List;
 import java.util.Set;
@@ -8,6 +9,7 @@ import net.minecraft.core.SectionPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.InsideBlockEffectApplier;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
@@ -84,7 +86,7 @@ public abstract class MixinEntity implements IEEntity, ImmPtlEntityExtension {
     @Shadow
     private ChunkPos chunkPosition;
     
-    @Shadow @Final private static Logger LOGGER;
+    @Unique private static final Logger LOGGER = LogUtils.getLogger();
     @Shadow private @Nullable BlockState inBlockState;
     @Unique
     private static final CountDownInt IMM_PTL_LOG_COUNTER = new CountDownInt(20);
@@ -161,18 +163,18 @@ public abstract class MixinEntity implements IEEntity, ImmPtlEntityExtension {
     }
     
     @Inject(
-        method = "checkInsideBlocks(Ljava/util/List;Ljava/util/Set;)V",
+        method = "checkInsideBlocks(Ljava/util/List;Lnet/minecraft/world/entity/InsideBlockEffectApplier$StepBasedCollector;)V",
         at = @At("HEAD"),
         cancellable = true
     )
-    private void onCheckInsideBlocks(List movements, Set states, CallbackInfo ci) {
+    private void onCheckInsideBlocks(List movements, InsideBlockEffectApplier.StepBasedCollector collector, CallbackInfo ci) {
         if (ip_getActiveCollisionBox(this.getBoundingBox()) == null) {
             ci.cancel();
         }
     }
     
     @Redirect(
-        method = "checkInsideBlocks(Ljava/util/List;Ljava/util/Set;)V",
+        method = "checkInsideBlocks(Ljava/util/List;Lnet/minecraft/world/entity/InsideBlockEffectApplier$StepBasedCollector;)V",
         at = @At(
             value = "INVOKE",
             target = "Lnet/minecraft/world/entity/Entity;makeBoundingBox(Lnet/minecraft/world/phys/Vec3;)Lnet/minecraft/world/phys/AABB;"

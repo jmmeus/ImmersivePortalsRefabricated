@@ -29,7 +29,7 @@ public class IPCGlobal {
     public static boolean lateClientLightUpdate = true;
     public static boolean earlyRemoteUpload = true;
     
-    public static boolean useSuperAdvancedFrustumCulling = true;
+    public static boolean useSuperAdvancedFrustumCulling = false;
     public static boolean earlyFrustumCullingPortal = true;
     
     public static boolean useSeparatedStencilFormat = false;

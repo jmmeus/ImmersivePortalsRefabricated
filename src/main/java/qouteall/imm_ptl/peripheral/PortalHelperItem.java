@@ -12,6 +12,9 @@ import net.minecraft.world.level.block.Block;
 
 import java.util.List;
 
+import net.minecraft.world.item.component.TooltipDisplay;
+import java.util.function.Consumer;
+
 public class PortalHelperItem extends BlockItem {
     private static boolean deprecationInformed = false;
     
@@ -28,7 +31,7 @@ public class PortalHelperItem extends BlockItem {
                     context.getPlayer().displayClientMessage(
                         Component.translatable(
                             "imm_ptl.portal_helper_deprecated",
-                            Component.literal("/portal shape sculpt")
+                            Component.translatable("imm_ptl.wand.item")
                                 .withStyle(ChatFormatting.GOLD)
                         ),
                         false
@@ -43,10 +46,11 @@ public class PortalHelperItem extends BlockItem {
     @Override
     public void appendHoverText(
         ItemStack itemStack, Item.TooltipContext tooltipContext,
-        List<Component> list, TooltipFlag tooltipFlag
+        TooltipDisplay tooltipDisplay,
+        Consumer<Component> list, TooltipFlag tooltipFlag
     ) {
-        super.appendHoverText(itemStack, tooltipContext, list, tooltipFlag);
+        super.appendHoverText(itemStack, tooltipContext, tooltipDisplay, list, tooltipFlag);
         
-        list.add(Component.translatable("imm_ptl.portal_helper_tooltip"));
+        list.accept(Component.translatable("imm_ptl.portal_helper_tooltip"));
     }
 }

@@ -158,10 +158,11 @@ public class FrustumCuller {
     ) {
         // 2  1
         // 3  0
-        Vec3 normal0 = vertices[1].cross(vertices[0]).normalize();
-        Vec3 normal1 = vertices[2].cross(vertices[1]).normalize();
-        Vec3 normal2 = vertices[3].cross(vertices[2]).normalize();
-        Vec3 normal3 = vertices[0].cross(vertices[3]).normalize();
+        // Inward pointing normals (dot product > 0 for points inside frustum)
+        Vec3 normal0 = vertices[0].cross(vertices[1]).normalize();
+        Vec3 normal1 = vertices[1].cross(vertices[2]).normalize();
+        Vec3 normal2 = vertices[2].cross(vertices[3]).normalize();
+        Vec3 normal3 = vertices[3].cross(vertices[0]).normalize();
         
         // assume that the plane origin is in the coordinate origin, so W is 0
         return new Frustum4Planes(
@@ -186,13 +187,6 @@ public class FrustumCuller {
             portal.transformPoint(v[2]).subtract(cameraPos),
             portal.transformPoint(v[3]).subtract(cameraPos)
         };
-        
-        if (portal instanceof Mirror) {
-            // flip for mirror
-            vTransformed = new Vec3[]{
-                vTransformed[3], vTransformed[2], vTransformed[1], vTransformed[0]
-            };
-        }
         
         Frustum4Planes fourPlanes =
             getFrustumPlanesFromFourVerticesCounterClockwise(vTransformed);

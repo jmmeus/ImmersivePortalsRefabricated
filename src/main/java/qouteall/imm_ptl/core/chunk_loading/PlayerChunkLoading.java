@@ -150,10 +150,10 @@ public class PlayerChunkLoading {
                     return false; // skip
                 }
                 
-                LevelChunk tickingChunk = chunkHolder.getTickingChunk();
+                LevelChunk levelChunk = chunkHolder.getChunkToSend();
                 
                 // skip that chunk if not yet loaded
-                if (tickingChunk == null) {
+                if (levelChunk == null) {
                     return false;
                 }
                 
@@ -166,7 +166,7 @@ public class PlayerChunkLoading {
                 sentNum.increment();
                 
                 sendChunkPacket(
-                    connection, world, tickingChunk
+                    connection, world, levelChunk
                 );
                 
                 if (sentNum.getValue() >= maxSendNum) {
