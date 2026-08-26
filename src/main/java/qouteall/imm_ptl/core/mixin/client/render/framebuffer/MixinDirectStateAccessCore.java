@@ -22,7 +22,7 @@ public class MixinDirectStateAccessCore {
     ) {
         ARBDirectStateAccess.glNamedFramebufferTexture(fbo, 36064, colorTexId, mipLevel);
         if (depthTexId != 0 && IPTextureHelper.isStencilTextureId(depthTexId)) {
-            ARBDirectStateAccess.glNamedFramebufferTexture(fbo, GL30.GL_DEPTH_ATTACHMENT, depthTexId, mipLevel);
+            ARBDirectStateAccess.glNamedFramebufferTexture(fbo, 36096, depthTexId, mipLevel);
             ARBDirectStateAccess.glNamedFramebufferTexture(fbo, GL30.GL_STENCIL_ATTACHMENT, depthTexId, mipLevel);
         } else {
             ARBDirectStateAccess.glNamedFramebufferTexture(fbo, 36096, depthTexId, mipLevel);

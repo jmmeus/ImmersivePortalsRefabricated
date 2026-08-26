@@ -19,10 +19,13 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.storage.TagValueInput;
+import net.minecraft.world.level.storage.TagValueOutput;
 import net.minecraft.world.level.block.state.BlockState;
 import com.mojang.serialization.Codec;
 import net.minecraft.util.datafix.DataFixTypes;
@@ -272,7 +275,7 @@ public class GlobalPortalStorage extends SavedData {
         if (e == null) {
             return null;
         }
-        e.load(compoundTag);
+        e.load(TagValueInput.create(ProblemReporter.DISCARDING, currWorld.registryAccess(), compoundTag));
         
         ((Portal) e).isGlobalPortal = true;
         
@@ -295,8 +298,9 @@ public class GlobalPortalStorage extends SavedData {
         
         for (Portal portal : data) {
             Validate.isTrue(portal.level() == currWorld);
-            CompoundTag portalTag = new CompoundTag();
-            portal.saveWithoutId(portalTag);
+            TagValueOutput output = TagValueOutput.createWithContext(ProblemReporter.DISCARDING, currWorld.registryAccess());
+            portal.saveWithoutId(output);
+            CompoundTag portalTag = output.buildResult();
             portalTag.putString(
                 "entity_type",
                 EntityType.getKey(portal.getType()).toString()

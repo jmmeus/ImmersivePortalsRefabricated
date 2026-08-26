@@ -3,7 +3,8 @@ package qouteall.imm_ptl.core.render.context_management;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
-import net.minecraft.client.renderer.FogRenderer;
+import net.minecraft.client.renderer.fog.FogRenderer;
+import net.minecraft.client.renderer.fog.environment.WaterFogEnvironment;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.util.profiling.Profiler;
 import net.minecraft.world.level.Level;
@@ -11,11 +12,12 @@ import net.minecraft.world.phys.Vec3;
 import org.joml.Vector4f;
 import qouteall.imm_ptl.core.ClientWorldLoader;
 import qouteall.imm_ptl.core.ducks.IECamera;
+import qouteall.imm_ptl.core.ducks.IEGameRenderer;
 
 import java.util.function.Consumer;
 
 /**
- * {@link FogRenderer}
+ * {@link WaterFogEnvironment}
  * {@link qouteall.imm_ptl.core.mixin.client.multiworld_awareness.MixinFogRenderer}
  */
 @SuppressWarnings("SpellCheckingInspection")
@@ -31,7 +33,7 @@ public class FogRendererContext {
     
     public static void init() {
         //load the class and apply mixin
-        FogRenderer.class.hashCode();
+        WaterFogEnvironment.class.hashCode();
         
         if (swappingManager == null) {
             swappingManager = new StaticFieldsSwappingManager<>(
@@ -88,15 +90,21 @@ public class FogRendererContext {
         ((IECamera) newCamera).portal_setFocusedEntity(client.cameraEntity);
         
         try {
-            Vector4f color = FogRenderer.computeFogColor(
-                newCamera,
-                RenderStates.getPartialTick(),
-                destWorld,
-                client.options.getEffectiveRenderDistance(),
-                client.gameRenderer.getDarkenWorldAmount(RenderStates.getPartialTick())
-            );
-            
-            return new Vec3(color.x(), color.y(), color.z());
+            DimensionRenderHelper helper = ClientWorldLoader.getDimensionRenderHelper(newWorldKey);
+            FogRenderer fogRenderer = helper.fogRenderer;
+            if (fogRenderer != null) {
+                Vector4f color = fogRenderer.setupFog(
+                    newCamera,
+                    client.options.getEffectiveRenderDistance(),
+                    false,
+                    client.getDeltaTracker(),
+                    client.gameRenderer.getDarkenWorldAmount(RenderStates.getPartialTick()),
+                    destWorld
+                );
+                
+                return new Vec3(color.x(), color.y(), color.z());
+            }
+            return new Vec3(0, 0, 0);
         }
         finally {
             swappingManager.popSwapping();

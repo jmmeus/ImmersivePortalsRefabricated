@@ -3,51 +3,46 @@ package qouteall.imm_ptl.core.mixin.common.collision;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityReference;
 import net.minecraft.world.entity.projectile.Projectile;
+import net.minecraft.world.level.Level;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Redirect;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+
+import java.util.UUID;
 
 @Mixin(Projectile.class)
 public abstract class MixinProjectile extends MixinEntity {
+    @Shadow
+    protected EntityReference<Entity> owner;
     
     // make it recognize the owner in another dimension
-    @Redirect(
-        method = "findOwner",
-        at = @At(
-            value = "INVOKE",
-            target = "Lnet/minecraft/server/level/ServerLevel;getEntity(Ljava/util/UUID;)Lnet/minecraft/world/entity/Entity;"
-        )
+    @Inject(
+        method = "getOwner",
+        at = @At("RETURN"),
+        cancellable = true
     )
-    private Entity redirectGetEntityFromUuid(
-        net.minecraft.server.level.ServerLevel serverLevel,
-        java.util.UUID uuid
-    ) {
-        MinecraftServer server = serverLevel.getServer();
-        for (ServerLevel world : server.getAllLevels()) {
-            Entity entity = world.getEntity(uuid);
-            if (entity != null) {
-                return entity;
+    private void onGetOwner(CallbackInfoReturnable<Entity> cir) {
+        if (cir.getReturnValue() == null && this.owner != null) {
+            UUID uuid = this.owner.getUUID();
+            if (uuid != null) {
+                Level level = ((Entity) (Object) this).level();
+                if (level instanceof ServerLevel serverLevel) {
+                    MinecraftServer server = serverLevel.getServer();
+                    for (ServerLevel world : server.getAllLevels()) {
+                        if (world != serverLevel) {
+                            Entity entity = world.getEntity(uuid);
+                            if (entity != null) {
+                                cir.setReturnValue(entity);
+                                return;
+                            }
+                        }
+                    }
+                }
             }
         }
-        return null;
     }
-    
-//    @Shadow
-//    public abstract void onHit(HitResult hitResult);
-//
-//    @Inject(method = "Lnet/minecraft/world/entity/projectile/Projectile;onHit(Lnet/minecraft/world/phys/HitResult;)V", at = @At(value = "HEAD"), cancellable = true)
-//    protected void onHit(HitResult hitResult, CallbackInfo ci) {
-//        Entity this_ = (Entity) (Object) this;
-//        if (hitResult instanceof BlockHitResult) {
-//            Block hittingBlock = this_.level().getBlockState(((BlockHitResult) hitResult).getBlockPos()).getBlock();
-//            if (hitResult.getType() == HitResult.Type.BLOCK &&
-//                hittingBlock == PortalPlaceholderBlock.instance
-//            ) {
-//                ci.cancel();
-//            }
-//        }
-//    }
-//
-    
 }

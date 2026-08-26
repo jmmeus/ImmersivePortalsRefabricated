@@ -20,7 +20,7 @@ public abstract class MixinItemEntity_P {
     public abstract ItemStack getItem();
     
     @Shadow
-    private @Nullable UUID thrower;
+    public abstract net.minecraft.world.entity.Entity getOwner();
     
     @Inject(
         method = "Lnet/minecraft/world/entity/item/ItemEntity;tick()V",
@@ -36,7 +36,7 @@ public abstract class MixinItemEntity_P {
             return;
         }
         
-        if (thrower == null) {
+        if (getOwner() == null) {
             return;
         }
         

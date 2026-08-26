@@ -1,5 +1,6 @@
 package qouteall.imm_ptl.core.render;
 
+import com.mojang.blaze3d.buffers.GpuBufferSlice;
 import com.mojang.blaze3d.ProjectionType;
 import com.mojang.blaze3d.platform.Lighting;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -9,8 +10,7 @@ import net.fabricmc.api.Environment;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
-import net.minecraft.client.renderer.FogParameters;
-import net.minecraft.client.renderer.FogRenderer;
+import net.minecraft.client.renderer.fog.FogRenderer;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.util.profiling.Profiler;
@@ -146,6 +146,8 @@ public class MyGameRenderer {
         ClientLevel oldWorld = client.level;
         LevelRenderer oldWorldRenderer = client.levelRenderer;
         LightTexture oldLightmap = client.gameRenderer.lightTexture();
+        net.minecraft.client.renderer.fog.FogRenderer oldFogRenderer = ieGameRenderer.ip_getFogRenderer();
+        GpuBufferSlice oldShaderFog = RenderSystem.getShaderFog();
         boolean oldNoClip = client.player.noPhysics;
         boolean oldDoRenderHand = ieGameRenderer.ip_getDoRenderHand();
         ObjectArrayList<SectionRenderDispatcher.RenderSection> oldChunkInfoList =
@@ -159,10 +161,12 @@ public class MyGameRenderer {
             ((IESectionRenderDispatcher) worldRenderer.getSectionRenderDispatcher())
                 .ip_getFixedBuffers();
         Frustum oldFrustum = ((IEWorldRenderer) worldRenderer).portal_getFrustum();
+        FrustumCuller oldFrustumCuller = SodiumInterface.frustumCuller;
         
         // the projection matrix contains view bobbing.
         // the view bobbing is related with scale
-        Matrix4f oldProjectionMatrix = RenderSystem.getProjectionMatrix();
+        GpuBufferSlice oldProjectionMatrix = RenderSystem.getProjectionMatrixBuffer();
+        ProjectionType oldProjectionType = RenderSystem.getProjectionType();
         Matrix4fStack oldModelViewStack = IERenderSystem.ip_getModelViewStack();
         
         ObjectArrayList<SectionRenderDispatcher.RenderSection> newChunkInfoList =
@@ -175,10 +179,12 @@ public class MyGameRenderer {
         ((IEMinecraftClient) client).ip_setWorldRenderer(worldRenderer);
         client.level = newWorld;
         ieGameRenderer.ip_setLightmapTextureManager(helper.lightmapTexture);
+        ieGameRenderer.ip_setFogRenderer(helper.fogRenderer);
+
         
         client.getBlockEntityRenderDispatcher().level = newWorld;
         client.player.noPhysics = true;
-        client.gameRenderer.setRenderHand(doRenderHand);
+        ieGameRenderer.ip_setDoRenderHand(doRenderHand);
         
         FogRendererContext.swappingManager.pushSwapping(newDimension);
         ((IEParticleManager) client.particleEngine).ip_setWorld(newWorld);
@@ -246,11 +252,14 @@ public class MyGameRenderer {
         ((IEMinecraftClient) client).ip_setWorldRenderer(oldWorldRenderer);
         client.level = oldWorld;
         ieGameRenderer.ip_setLightmapTextureManager(oldLightmap);
+        ieGameRenderer.ip_setFogRenderer(oldFogRenderer);
+        RenderSystem.setShaderFog(oldShaderFog);
         client.getBlockEntityRenderDispatcher().level = oldWorld;
         client.player.noPhysics = oldNoClip;
-        client.gameRenderer.setRenderHand(oldDoRenderHand);
+        ieGameRenderer.ip_setDoRenderHand(oldDoRenderHand);
         
         ((IEParticleManager) client.particleEngine).ip_setWorld(oldWorld);
+        SodiumInterface.frustumCuller = oldFrustumCuller;
         client.hitResult = oldCrosshairTarget;
         ieGameRenderer.ip_setCamera(oldCamera);
         
@@ -260,6 +269,7 @@ public class MyGameRenderer {
         
         ((IEWorldRenderer) oldWorldRenderer).portal_setChunkInfoList(oldChunkInfoList);
         VisibleSectionDiscovery.returnList(newChunkInfoList);
+
         
         ((IEWorldRenderer) worldRenderer).ip_setRenderBuffers(oldRenderBuffers);
         ((IEMinecraftClient) client).ip_setRenderBuffers(oldClientRenderBuffers);
@@ -271,7 +281,7 @@ public class MyGameRenderer {
         
         ((IEWorldRenderer) worldRenderer).portal_setFrustum(oldFrustum);
         
-        RenderSystem.setProjectionMatrix(oldProjectionMatrix, ProjectionType.PERSPECTIVE);
+        RenderSystem.setProjectionMatrix(oldProjectionMatrix, oldProjectionType);
         IERenderSystem.ip_setModelViewStack(oldModelViewStack);
         
         IrisInterface.invoker.setPipeline(worldRenderer, irisPipeline);
@@ -294,37 +304,49 @@ public class MyGameRenderer {
     @IPVanillaCopy
     public static void resetFogState() {
         Camera camera = client.gameRenderer.getMainCamera();
-        float g = client.gameRenderer.getRenderDistance();
         
         Vec3 cameraPos = camera.getPosition();
         double x = cameraPos.x();
         double y = cameraPos.y();
-        double z = cameraPos.z();
         
         boolean isFoggy = client.level.effects().isFoggyAt(Mth.floor(x), Mth.floor(y)) ||
             client.gui.getBossOverlay().shouldCreateWorldFog();
         
-        Vector4f fogColor = FogRenderer.computeFogColor(
-            camera,
-            RenderStates.getPartialTick(),
-            client.level,
-            client.options.getEffectiveRenderDistance(),
-            client.gameRenderer.getDarkenWorldAmount(RenderStates.getPartialTick())
-        );
-        FogParameters fogParameters = FogRenderer.setupFog(
-            camera, FogRenderer.FogMode.FOG_TERRAIN, fogColor, Math.max(g, 32.0F), isFoggy, RenderStates.getPartialTick()
-        );
-        RenderSystem.setShaderFog(fogParameters);
+        FogRenderer fogRenderer = ((IEGameRenderer) client.gameRenderer).ip_getFogRenderer();
+        if (fogRenderer != null) {
+            fogRenderer.setupFog(
+                camera,
+                client.options.getEffectiveRenderDistance(),
+                isFoggy,
+                client.getDeltaTracker(),
+                client.gameRenderer.getDarkenWorldAmount(RenderStates.getPartialTick()),
+                client.level
+            );
+            RenderSystem.setShaderFog(fogRenderer.getBuffer(FogRenderer.FogMode.WORLD));
+        }
     }
     
     public static void updateFogColor() {
-        FogRenderer.computeFogColor(
-            client.gameRenderer.getMainCamera(),
-            RenderStates.getPartialTick(),
-            client.level,
-            client.options.getEffectiveRenderDistance(),
-            client.gameRenderer.getDarkenWorldAmount(RenderStates.getPartialTick())
-        );
+        Camera camera = client.gameRenderer.getMainCamera();
+        
+        Vec3 cameraPos = camera.getPosition();
+        double x = cameraPos.x();
+        double y = cameraPos.y();
+        
+        boolean isFoggy = client.level.effects().isFoggyAt(Mth.floor(x), Mth.floor(y)) ||
+            client.gui.getBossOverlay().shouldCreateWorldFog();
+        
+        FogRenderer fogRenderer = ((IEGameRenderer) client.gameRenderer).ip_getFogRenderer();
+        if (fogRenderer != null) {
+            fogRenderer.setupFog(
+                camera,
+                client.options.getEffectiveRenderDistance(),
+                isFoggy,
+                client.getDeltaTracker(),
+                client.gameRenderer.getDarkenWorldAmount(RenderStates.getPartialTick()),
+                client.level
+            );
+        }
     }
     
     /**
@@ -334,12 +356,8 @@ public class MyGameRenderer {
     public static void resetDiffuseLighting() {
         ClientLevel world = client.level;
         assert world != null;
-        if (world.effects().constantAmbientLight()) {
-            Lighting.setupNetherLevel();
-        }
-        else {
-            Lighting.setupLevel();
-        }
+        client.gameRenderer.getLighting().updateLevel(world.effects().constantAmbientLight());
+        client.gameRenderer.getLighting().setupFor(Lighting.Entry.LEVEL);
     }
     
     

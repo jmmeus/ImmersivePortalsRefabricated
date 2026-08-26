@@ -87,7 +87,7 @@ public abstract class PortalRenderer {
         Supplier<Frustum> frustumSupplier = Helper.cached(() -> {
             Frustum frustum = new Frustum(
                 modelView,
-                RenderSystem.getProjectionMatrix()
+                RenderStates.getProjectionMatrix()
             );
             
             Vec3 cameraPos = CHelper.getCurrentCameraPos();
@@ -148,6 +148,21 @@ public abstract class PortalRenderer {
             if (outerPortal.cannotRenderInMe(portal)) {
                 return true;
             }
+            
+            qouteall.q_misc_util.my_util.Plane clippingPlane = PortalRendering.getActiveClippingPlane();
+            if (clippingPlane != null) {
+                net.minecraft.world.phys.AABB bb = portal.getThinBoundingBox();
+                if (clippingPlane.getDistanceTo(bb.minX, bb.minY, bb.minZ) < -0.01 &&
+                    clippingPlane.getDistanceTo(bb.minX, bb.minY, bb.maxZ) < -0.01 &&
+                    clippingPlane.getDistanceTo(bb.minX, bb.maxY, bb.minZ) < -0.01 &&
+                    clippingPlane.getDistanceTo(bb.minX, bb.maxY, bb.maxZ) < -0.01 &&
+                    clippingPlane.getDistanceTo(bb.maxX, bb.minY, bb.minZ) < -0.01 &&
+                    clippingPlane.getDistanceTo(bb.maxX, bb.minY, bb.maxZ) < -0.01 &&
+                    clippingPlane.getDistanceTo(bb.maxX, bb.maxY, bb.minZ) < -0.01 &&
+                    clippingPlane.getDistanceTo(bb.maxX, bb.maxY, bb.maxZ) < -0.01) {
+                    return true;
+                }
+            }
         }
         
         double distance = portal.getDistanceToNearestPointInPortal(cameraPos);
@@ -155,7 +170,7 @@ public abstract class PortalRenderer {
             return true;
         }
         
-        if (IPCGlobal.earlyFrustumCullingPortal && !PortalRendering.isRendering()) {
+        if (IPCGlobal.earlyFrustumCullingPortal) {
             // frustum culling does not work when portal is very close
             if (distance > 0.1) {
                 Frustum frustum = frustumSupplier.get();

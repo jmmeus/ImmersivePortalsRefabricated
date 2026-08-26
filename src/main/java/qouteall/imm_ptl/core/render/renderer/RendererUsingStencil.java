@@ -18,7 +18,9 @@ import qouteall.imm_ptl.core.render.MyRenderHelper;
 import qouteall.imm_ptl.core.render.ViewAreaRenderer;
 import qouteall.imm_ptl.core.render.context_management.FogRendererContext;
 import qouteall.imm_ptl.core.render.context_management.PortalRendering;
+import qouteall.imm_ptl.core.render.context_management.RenderStates;
 import qouteall.imm_ptl.core.render.context_management.WorldRenderInfo;
+
 
 import java.util.List;
 
@@ -32,7 +34,6 @@ import static org.lwjgl.opengl.GL11.GL_REPLACE;
 import static org.lwjgl.opengl.GL11.GL_STENCIL_TEST;
 
 public class RendererUsingStencil extends PortalRenderer {
-    
     
     @Override
     public boolean replaceFrameBufferClearing() {
@@ -52,8 +53,10 @@ public class RendererUsingStencil extends PortalRenderer {
         GlStateManager._enableDepthTest();
         GlStateManager._depthMask(true);
         
+        Matrix4f projection = RenderStates.getProjectionMatrix();
+        
         Profiler.get().popPush("render_portal_total");
-        renderPortals(modelView);
+        renderPortals(modelView, projection);
         CHelper.bindRenderTarget(client.getMainRenderTarget());
         if (PortalRendering.isRendering()) {
             setStencilStateForWorldRendering();
@@ -65,11 +68,11 @@ public class RendererUsingStencil extends PortalRenderer {
         }
     }
     
-    protected void renderPortals(Matrix4f modelView) {
+    protected void renderPortals(Matrix4f modelView, Matrix4f projection) {
         List<Portal> portalsToRender = getPortalsToRender(modelView);
         
         for (Portal portal : portalsToRender) {
-            doRenderPortal(portal, modelView);
+            doRenderPortal(portal, modelView, projection);
         }
     }
     
@@ -118,23 +121,27 @@ public class RendererUsingStencil extends PortalRenderer {
     
     protected void doRenderPortal(
         Portal portal,
-        Matrix4f modelView
+        Matrix4f modelView,
+        Matrix4f projection
     ) {
         if (shouldSkipRenderingInsideFuseViewPortal(portal)) {
             return;
         }
+        
+        FrontClipping.disableClipping();
         
         int outerPortalStencilValue = PortalRendering.getPortalLayer();
         
         Profiler.get().push("render_view_area");
         
         boolean anySamplePassed = PortalRenderInfo.renderAndDecideVisibility(portal, () -> {
-            renderPortalViewAreaToStencil(portal, modelView);
+            renderPortalViewAreaToStencil(portal, modelView, projection);
         });
         
         Profiler.get().pop();
         
         if (!anySamplePassed) {
+            FrontClipping.disableClipping();
             setStencilStateForWorldRendering();
             return;
         }
@@ -159,10 +166,12 @@ public class RendererUsingStencil extends PortalRenderer {
         // pop portal layer before restoring depth, for clipping, see ViewAreaRenderer
         
         if (!portal.isFuseView()) {
-            restoreDepthOfPortalViewArea(portal, modelView, thisPortalStencilValue);
+            restoreDepthOfPortalViewArea(portal, modelView, projection, thisPortalStencilValue);
         }
         
         clampStencilValue(outerPortalStencilValue);
+        
+        FrontClipping.disableClipping();
         
         CHelper.bindRenderTarget(client.getMainRenderTarget());
     }
@@ -173,7 +182,7 @@ public class RendererUsingStencil extends PortalRenderer {
     }
     
     private void renderPortalViewAreaToStencil(
-        Portal portal, Matrix4f modelView
+        Portal portal, Matrix4f modelView, Matrix4f projection
     ) {
         int outerPortalStencilValue = PortalRendering.getPortalLayer();
         
@@ -194,7 +203,7 @@ public class RendererUsingStencil extends PortalRenderer {
         ViewAreaRenderer.renderPortalArea(
             portal, Vec3.ZERO,
             modelView,
-            RenderSystem.getProjectionMatrix(),
+            projection,
             true, false,
             true, true
         );
@@ -229,7 +238,7 @@ public class RendererUsingStencil extends PortalRenderer {
     }
     
     protected void restoreDepthOfPortalViewArea(
-        Portal portal, Matrix4f modelView,
+        Portal portal, Matrix4f modelView, Matrix4f projection,
         int portalStencilValue
     ) {
         setStencilLimitation(portalStencilValue);
@@ -241,7 +250,7 @@ public class RendererUsingStencil extends PortalRenderer {
         ViewAreaRenderer.renderPortalArea(
             portal, Vec3.ZERO,
             modelView,
-            RenderSystem.getProjectionMatrix(),
+            projection,
             false, false,
             true,
             true // important: should clip, otherwise depth will be abnormal when viewing scale box from inside in portal

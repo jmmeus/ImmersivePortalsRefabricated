@@ -12,3 +12,4 @@ public class SodiumRenderingContext {
         this.renderLists = SortedRenderLists.empty();
     }
 }
+

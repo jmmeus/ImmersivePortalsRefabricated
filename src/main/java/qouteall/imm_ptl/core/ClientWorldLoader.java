@@ -126,15 +126,15 @@ public class ClientWorldLoader {
         }
         
         boolean lightmapTextureConflict = false;
+        Level mainWorld = CLIENT.player != null ? CLIENT.player.level() : CLIENT.level;
         for (DimensionRenderHelper helper : RENDER_HELPER_MAP.values()) {
             helper.tick();
-            if (helper.world != CLIENT.level) {
+            if (mainWorld != null && helper.world.dimension() != mainWorld.dimension()) {
                 if (helper.lightmapTexture == CLIENT.gameRenderer.lightTexture()) {
-                    assert CLIENT.level != null;
                     LOGGER.info(
                         "Lightmap Texture Conflict {} {}",
                         helper.world.dimension().location(),
-                        CLIENT.level.dimension().location()
+                        mainWorld.dimension().location()
                     );
                     lightmapTextureConflict = true;
                 }

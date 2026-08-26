@@ -34,6 +34,11 @@ public class Mirror extends Portal {
         return false;
     }
     
+    @Override
+    public boolean canDoOuterFrustumCulling() {
+        return false;
+    }
+    
     public Vec3 getMirrored(Vec3 vec) {
         Vec3 normal = getNormal();
         return mirroredVec(vec, normal);

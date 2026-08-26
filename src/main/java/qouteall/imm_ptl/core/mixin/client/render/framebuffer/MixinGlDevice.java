@@ -16,7 +16,7 @@ import qouteall.imm_ptl.core.render.IPTextureHelper;
 @Mixin(GlDevice.class)
 public class MixinGlDevice {
     @ModifyArgs(
-        method = "createTexture(Ljava/lang/String;Lcom/mojang/blaze3d/textures/TextureFormat;III)Lcom/mojang/blaze3d/textures/GpuTexture;",
+        method = "createTexture(Ljava/lang/String;ILcom/mojang/blaze3d/textures/TextureFormat;IIII)Lcom/mojang/blaze3d/textures/GpuTexture;",
         at = @At(
             value = "INVOKE",
             target = "Lcom/mojang/blaze3d/opengl/GlStateManager;_texImage2D(IIIIIIIILjava/nio/IntBuffer;)V"
@@ -24,9 +24,9 @@ public class MixinGlDevice {
     )
     private void onTexImage2D(Args args) {
         int internalFormat = args.get(2);
-        // 33191 = GL_DEPTH_COMPONENT32F (TextureFormat.DEPTH32), 6402 = GL_DEPTH_COMPONENT
+        // 36012 = GL_DEPTH_COMPONENT32F (TextureFormat.DEPTH32), 33191 = GL_DEPTH_COMPONENT32, 6402 = GL_DEPTH_COMPONENT
         // NOTE: 32856 is GL_RGBA8 and MUST NOT be matched here!
-        if (IPTextureHelper.isCreatingStencilDepthTexture && (internalFormat == 33191 || internalFormat == 6402)) {
+        if (IPTextureHelper.isCreatingStencilDepthTexture && (internalFormat == 36012 || internalFormat == 33191 || internalFormat == 33190 || internalFormat == 33189 || internalFormat == 6402)) {
             args.set(2, GL30.GL_DEPTH24_STENCIL8);
             args.set(6, GL30.GL_DEPTH_STENCIL);
             args.set(7, GL30.GL_UNSIGNED_INT_24_8);
@@ -34,11 +34,11 @@ public class MixinGlDevice {
     }
     
     @Inject(
-        method = "createTexture(Ljava/lang/String;Lcom/mojang/blaze3d/textures/TextureFormat;III)Lcom/mojang/blaze3d/textures/GpuTexture;",
+        method = "createTexture(Ljava/lang/String;ILcom/mojang/blaze3d/textures/TextureFormat;IIII)Lcom/mojang/blaze3d/textures/GpuTexture;",
         at = @At("RETURN")
     )
     private void onReturnCreateTexture(
-        String label, TextureFormat format, int width, int height, int mipLevels,
+        String label, int flags, TextureFormat format, int width, int height, int depthOrLayers, int mipLevels,
         CallbackInfoReturnable<GpuTexture> cir
     ) {
         if (IPTextureHelper.isCreatingStencilDepthTexture && format.hasDepthAspect()) {

@@ -24,7 +24,7 @@ public class MixinDirectStateAccessEmulated {
         GlStateManager._glBindFramebuffer(target, fbo);
         GlStateManager._glFramebufferTexture2D(target, 36064, 3553, colorTexId, mipLevel);
         if (depthTexId != 0 && IPTextureHelper.isStencilTextureId(depthTexId)) {
-            GlStateManager._glFramebufferTexture2D(target, GL30.GL_DEPTH_ATTACHMENT, 3553, depthTexId, mipLevel);
+            GlStateManager._glFramebufferTexture2D(target, 36096, 3553, depthTexId, mipLevel);
             GlStateManager._glFramebufferTexture2D(target, GL30.GL_STENCIL_ATTACHMENT, 3553, depthTexId, mipLevel);
         } else {
             GlStateManager._glFramebufferTexture2D(target, 36096, 3553, depthTexId, mipLevel);

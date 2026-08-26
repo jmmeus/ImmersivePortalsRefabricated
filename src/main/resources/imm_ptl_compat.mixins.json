@@ -15,7 +15,6 @@
     "iris.MixinIrisShadowRenderTargets",
     "iris.MixinIrisSodiumShader",
     "iris.MixinIrisTransformPatcher",
-    "sodium.IESodiumWorldRenderer",
     "sodium.MixinSodiumDefaultShaderInterface",
     "sodium.MixinSodiumFlawlessFrames",
     "sodium.MixinSodiumOcclusionCuller",
@@ -23,7 +22,8 @@
     "sodium.MixinSodiumRenderSectionManager",
     "sodium.MixinSodiumShaderLoader",
     "sodium.MixinSodiumViewport",
-    "sodium.MixinSodiumWorldRenderer"
+    "sodium.MixinSodiumWorldRenderer",
+    "sodium.MixinSodiumGLRenderDevice"
   ],
   "injectors": {
     "defaultRequire": 1

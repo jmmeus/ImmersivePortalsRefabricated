@@ -18,6 +18,7 @@ import qouteall.imm_ptl.core.render.FrontClipping;
 import qouteall.imm_ptl.core.render.MyRenderHelper;
 import qouteall.imm_ptl.core.render.ViewAreaRenderer;
 import qouteall.imm_ptl.core.render.context_management.PortalRendering;
+import qouteall.imm_ptl.core.render.context_management.RenderStates;
 import qouteall.imm_ptl.core.render.context_management.WorldRenderInfo;
 import qouteall.imm_ptl.core.render.renderer.PortalRenderer;
 import qouteall.imm_ptl.core.render.renderer.RendererUsingStencil;
@@ -113,7 +114,7 @@ public class ExperimentalIrisPortalRenderer extends PortalRenderer {
         ViewAreaRenderer.renderPortalArea(
             portal, Vec3.ZERO,
             modelView,
-            RenderSystem.getProjectionMatrix(),
+            RenderStates.getProjectionMatrix(),
             false,
             false,
             true,
@@ -292,7 +293,7 @@ public class ExperimentalIrisPortalRenderer extends PortalRenderer {
         ViewAreaRenderer.renderPortalArea(
             portal, Vec3.ZERO,
             modelView,
-            RenderSystem.getProjectionMatrix(),
+            RenderStates.getProjectionMatrix(),
             true,
             false, // don't modify color
             true,

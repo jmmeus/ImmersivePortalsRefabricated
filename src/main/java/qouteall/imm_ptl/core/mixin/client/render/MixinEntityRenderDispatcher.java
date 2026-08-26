@@ -8,6 +8,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import qouteall.imm_ptl.core.render.CrossPortalEntityRenderer;
+import qouteall.imm_ptl.core.render.context_management.PortalRendering;
 
 
 @Mixin(EntityRenderDispatcher.class)
@@ -27,6 +28,12 @@ public class MixinEntityRenderDispatcher {
     ) {
         if (!CrossPortalEntityRenderer.shouldRenderEntityNow(entity_1)) {
             cir.setReturnValue(false);
+            cir.cancel();
+            return;
+        }
+        
+        if (PortalRendering.isRendering()) {
+            cir.setReturnValue(true);
             cir.cancel();
         }
     }

@@ -61,13 +61,11 @@ public class ViewAreaRenderer {
             GlStateManager._depthMask(false);
         }
         
-        if (doClip) {
-            if (PortalRendering.isRendering()) {
-                FrontClipping.setupInnerClipping(
-                    PortalRendering.getActiveClippingPlane(),
-                    modelViewMatrix, 0  // don't do adjustment
-                );
-            }
+        if (doClip && PortalRendering.isRendering()) {
+            FrontClipping.setupInnerClipping(
+                PortalRendering.getActiveClippingPlane(),
+                modelViewMatrix, 0  // don't do adjustment
+            );
         }
         else {
             FrontClipping.disableClipping();
@@ -95,9 +93,7 @@ public class ViewAreaRenderer {
         GlStateManager._colorMask(true, true, true, true);
         GlStateManager._depthMask(true);
         
-        if (PortalRendering.isRendering()) {
-            FrontClipping.disableClipping();
-        }
+        FrontClipping.disableClipping();
         
         CHelper.checkGlError();
     }

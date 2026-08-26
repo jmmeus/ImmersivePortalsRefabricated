@@ -17,6 +17,7 @@ import qouteall.imm_ptl.core.render.QueryManager;
 import qouteall.imm_ptl.core.render.SecondaryFrameBuffer;
 import qouteall.imm_ptl.core.render.ViewAreaRenderer;
 import qouteall.imm_ptl.core.render.context_management.PortalRendering;
+import qouteall.imm_ptl.core.render.context_management.RenderStates;
 
 import java.util.List;
 
@@ -109,7 +110,7 @@ public class RendererUsingFrameBuffer extends PortalRenderer {
             ViewAreaRenderer.renderPortalArea(
                 portal, Vec3.ZERO,
                 modelView,
-                RenderSystem.getProjectionMatrix(),
+                RenderStates.getProjectionMatrix(),
                 true, true,
                 true, true
             );
@@ -121,7 +122,7 @@ public class RendererUsingFrameBuffer extends PortalRenderer {
             portal,
             secondaryFrameBuffer.fb,
             modelView,
-            RenderSystem.getProjectionMatrix()
+            RenderStates.getProjectionMatrix()
         );
     }
     

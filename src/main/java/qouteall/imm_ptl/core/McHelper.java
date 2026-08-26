@@ -397,7 +397,7 @@ public class McHelper {
         
         Validate.notNull(newPortal);
         
-        newPortal.load(portal.saveWithoutId(new CompoundTag()));
+        newPortal.readPortalDataFromNbt(portal.writePortalDataToNbt());
         return newPortal;
     }
     

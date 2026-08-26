@@ -174,7 +174,7 @@ public abstract class MixinEntity implements IEEntity, ImmPtlEntityExtension {
     }
     
     @Redirect(
-        method = "checkInsideBlocks(Ljava/util/List;Lnet/minecraft/world/entity/InsideBlockEffectApplier$StepBasedCollector;)V",
+        method = "checkInsideBlocks(Lnet/minecraft/world/phys/Vec3;Lnet/minecraft/world/phys/Vec3;Lnet/minecraft/world/entity/InsideBlockEffectApplier$StepBasedCollector;Lit/unimi/dsi/fastutil/longs/LongSet;)V",
         at = @At(
             value = "INVOKE",
             target = "Lnet/minecraft/world/entity/Entity;makeBoundingBox(Lnet/minecraft/world/phys/Vec3;)Lnet/minecraft/world/phys/AABB;"

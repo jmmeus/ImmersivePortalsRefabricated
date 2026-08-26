@@ -37,3 +37,11 @@ transitive-accessible field net/minecraft/client/multiplayer/ClientChunkCache st
 transitive-accessible field net/minecraft/client/multiplayer/ClientChunkCache level Lnet/minecraft/client/multiplayer/ClientLevel;
 
 transitive-accessible class net/minecraft/util/datafix/fixes/ItemStackComponentizationFix$ItemStackData
+
+transitive-accessible field net/minecraft/world/level/storage/TagValueInput input Lnet/minecraft/nbt/CompoundTag;
+transitive-accessible field net/minecraft/world/level/storage/TagValueOutput output Lnet/minecraft/nbt/CompoundTag;
+
+transitive-accessible field net/minecraft/server/level/ServerPlayer server Lnet/minecraft/server/MinecraftServer;
+
+transitive-accessible field net/minecraft/client/renderer/GameRenderer fogRenderer Lnet/minecraft/client/renderer/fog/FogRenderer;
+transitive-mutable field net/minecraft/client/renderer/GameRenderer fogRenderer Lnet/minecraft/client/renderer/fog/FogRenderer;

@@ -13,7 +13,7 @@ import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.client.renderer.FogParameters;
+import com.mojang.blaze3d.buffers.GpuBufferSlice;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.LightTexture;
@@ -35,6 +35,7 @@ import net.minecraft.world.phys.Vec3;
 import org.apache.commons.lang3.Validate;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
+import org.joml.Vector4f;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Mutable;
@@ -133,64 +134,6 @@ public abstract class MixinLevelRenderer implements IEWorldRenderer {
     }
     
     @Inject(
-        method = "renderSectionLayer",
-        at = @At("HEAD")
-    )
-    private void onBeforeRenderingLayer(
-        RenderType renderType, double x, double y, double z, Matrix4f modelView, Matrix4f projection, CallbackInfo ci
-    ) {
-        if (renderType == RenderType.translucent()) {
-            IPCGlobal.renderer.onBeforeTranslucentRendering(modelView);
-            
-            MyGameRenderer.updateFogColor();
-            MyGameRenderer.resetFogState();
-            
-            MyGameRenderer.resetDiffuseLighting();
-            
-            FrontClipping.disableClipping();
-        }
-        else if (PortalRendering.isRendering()) {
-            FrontClipping.setupInnerClipping(
-                PortalRendering.getActiveClippingPlane(),
-                modelView,
-                -FrontClipping.ADJUSTMENT
-                // move the clipping plane a little back, to make world wrapping portal not z-fight
-            );
-            
-            if (PortalRendering.isRenderingOddNumberOfMirrors()) {
-                MyRenderHelper.applyMirrorFaceCulling();
-            }
-            
-            if (IPGlobal.enableDepthClampForPortalRendering) {
-                CHelper.enableDepthClamp();
-            }
-        }
-    }
-    
-    @Inject(
-        method = "renderSectionLayer",
-        at = @At("RETURN")
-    )
-    private void onAfterRenderingLayer(
-        RenderType renderType, double x, double y, double z, Matrix4f modelView, Matrix4f projection, CallbackInfo ci
-    ) {
-        if (renderType == RenderType.translucent()) {
-            IPCGlobal.renderer.onAfterTranslucentRendering(modelView);
-            
-            // make hand rendering normal
-            Lighting.setupLevel();
-        }
-        else if (PortalRendering.isRendering()) {
-            FrontClipping.disableClipping();
-            MyRenderHelper.recoverFaceCulling();
-            
-            if (IPGlobal.enableDepthClampForPortalRendering) {
-                CHelper.disableDepthClamp();
-            }
-        }
-    }
-    
-    @Inject(
         method = "Lnet/minecraft/client/renderer/LevelRenderer;setupRender(Lnet/minecraft/client/Camera;Lnet/minecraft/client/renderer/culling/Frustum;ZZ)V",
         at = @At("HEAD"),
         cancellable = true
@@ -200,10 +143,9 @@ public abstract class MixinLevelRenderer implements IEWorldRenderer {
         CallbackInfo ci
     ) {
         if (WorldRenderInfo.isRendering()) {
-            if (level.dimension() != RenderStates.originalPlayerDimension) {
-                sectionRenderDispatcher.setCamera(camera.getPosition());
-            }
+            sectionRenderDispatcher.setCameraPosition(camera.getPosition());
         }
+
         
         if (ip_allowOverrideTerrainSetup()) {
             if (WorldRenderInfo.isRendering()) {
@@ -323,7 +265,7 @@ public abstract class MixinLevelRenderer implements IEWorldRenderer {
         at = @At("HEAD")
     )
     private void beforeRenderingWeather(
-        FrameGraphBuilder frameGraphBuilder, Vec3 vec3, float f, FogParameters fogParameters, CallbackInfo ci
+        FrameGraphBuilder frameGraphBuilder, Vec3 vec3, float f, GpuBufferSlice fogBuffer, CallbackInfo ci
     ) {
         if (PortalRendering.isRendering()) {
             RenderStates.isRenderingPortalWeather = true;
@@ -335,7 +277,7 @@ public abstract class MixinLevelRenderer implements IEWorldRenderer {
         at = @At("RETURN")
     )
     private void afterRenderingWeather(
-        FrameGraphBuilder frameGraphBuilder, Vec3 vec3, float f, FogParameters fogParameters, CallbackInfo ci
+        FrameGraphBuilder frameGraphBuilder, Vec3 vec3, float f, GpuBufferSlice fogBuffer, CallbackInfo ci
     ) {
         if (PortalRendering.isRendering()) {
             RenderStates.isRenderingPortalWeather = false;
@@ -385,7 +327,7 @@ public abstract class MixinLevelRenderer implements IEWorldRenderer {
         method = "addSkyPass", at = @At("HEAD"), cancellable = true
     )
     private void onRenderSkyBegin(
-        FrameGraphBuilder frameGraphBuilder, Camera camera, float partialTick, FogParameters fogParameters, CallbackInfo ci
+        FrameGraphBuilder frameGraphBuilder, Camera camera, float partialTick, GpuBufferSlice fogBuffer, CallbackInfo ci
     ) {
         if (WorldRenderInfo.isRendering()) {
             if (!WorldRenderInfo.getTopRenderInfo().doRenderSky) {
@@ -405,9 +347,22 @@ public abstract class MixinLevelRenderer implements IEWorldRenderer {
         at = @At("RETURN")
     )
     private void onRenderSkyEnd(
-        FrameGraphBuilder frameGraphBuilder, Camera camera, float partialTick, FogParameters fogParameters, CallbackInfo ci
+        FrameGraphBuilder frameGraphBuilder, Camera camera, float partialTick, GpuBufferSlice fogBuffer, CallbackInfo ci
     ) {
         MyRenderHelper.recoverFaceCulling();
+    }
+    
+    @Inject(
+        method = "shouldRenderDarkDisc",
+        at = @At("HEAD"),
+        cancellable = true
+    )
+    private void onShouldRenderDarkDisc(float partialTick, CallbackInfoReturnable<Boolean> cir) {
+        if (WorldRenderInfo.isRendering()) {
+            Vec3 cameraPos = CHelper.getCurrentCameraPos();
+            double horizonHeight = this.level.getLevelData().getHorizonHeight(this.level);
+            cir.setReturnValue(cameraPos.y - horizonHeight < 0.0);
+        }
     }
     
 
@@ -467,7 +422,7 @@ public abstract class MixinLevelRenderer implements IEWorldRenderer {
         );
         
         return renderChunk != null
-            && renderChunk.compiled.get() != SectionRenderDispatcher.CompiledSection.UNCOMPILED;
+            && renderChunk.getSectionMesh() != net.minecraft.client.renderer.chunk.CompiledSectionMesh.UNCOMPILED;
     }
     
     @Override

@@ -67,8 +67,8 @@ public abstract class BreakablePortalEntity extends Portal {
     }
     
     @Override
-    protected void readAdditionalSaveData(CompoundTag compoundTag) {
-        super.readAdditionalSaveData(compoundTag);
+    protected void readPortalDataFromNbtInternal(CompoundTag compoundTag) {
+        super.readPortalDataFromNbtInternal(compoundTag);
         if (compoundTag.contains("netherPortalShape")) {
             blockPortalShape = new BlockPortalShape(compoundTag.getCompoundOrEmpty("netherPortalShape"));
         }
@@ -108,8 +108,8 @@ public abstract class BreakablePortalEntity extends Portal {
     }
     
     @Override
-    protected void addAdditionalSaveData(CompoundTag compoundTag) {
-        super.addAdditionalSaveData(compoundTag);
+    protected void writePortalDataToNbtInternal(CompoundTag compoundTag) {
+        super.writePortalDataToNbtInternal(compoundTag);
         if (blockPortalShape != null) {
             compoundTag.put("netherPortalShape", blockPortalShape.toTag());
         }

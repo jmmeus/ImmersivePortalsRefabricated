@@ -79,13 +79,7 @@ public class CrossPortalEntityRenderer {
     
     public static void onBeginRenderingEntitiesAndBlockEntities(Matrix4f modelView) {
         isRenderingEntityNormally = true;
-        
-        if (PortalRendering.isRendering()) {
-            FrontClipping.setupInnerClipping(
-                PortalRendering.getActiveClippingPlane(),
-                modelView, 0
-            );
-        }
+        FrontClipping.disableClipping();
     }
     
     private static boolean isCrossPortalRenderingEnabled() {
@@ -381,14 +375,16 @@ public class CrossPortalEntityRenderer {
             
             // client colliding portal update is not immediate
             if (collidingPortal != null && !(entity instanceof LocalPlayer)) {
-                if (renderingPortal instanceof Portal) {
-                    if (!Portal.isReversePortal(collidingPortal, ((Portal) renderingPortal))) {
-                        Vec3 cameraPos = PortalRenderer.client.gameRenderer.getMainCamera().getPosition();
-                        
-                        boolean isHidden = cameraPos.subtract(collidingPortal.getOriginPos())
-                            .dot(collidingPortal.getNormal()) < 0;
-                        if (isHidden) {
-                            return false;
+                if (collidingPortal.getOriginDim() == client.level.dimension()) {
+                    if (renderingPortal instanceof Portal) {
+                        if (!Portal.isReversePortal(collidingPortal, ((Portal) renderingPortal)) && collidingPortal != renderingPortal) {
+                            Vec3 cameraPos = PortalRenderer.client.gameRenderer.getMainCamera().getPosition();
+                            
+                            boolean isHidden = cameraPos.subtract(collidingPortal.getOriginPos())
+                                .dot(collidingPortal.getNormal()) < 0;
+                            if (isHidden) {
+                                return false;
+                            }
                         }
                     }
                 }

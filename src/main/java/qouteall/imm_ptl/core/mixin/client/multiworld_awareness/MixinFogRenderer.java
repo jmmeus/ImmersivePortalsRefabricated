@@ -1,6 +1,6 @@
 package qouteall.imm_ptl.core.mixin.client.multiworld_awareness;
 
-import net.minecraft.client.renderer.FogRenderer;
+import net.minecraft.client.renderer.fog.environment.WaterFogEnvironment;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -8,7 +8,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import qouteall.imm_ptl.core.render.context_management.FogRendererContext;
 
-@Mixin(value = FogRenderer.class, priority = 1100)
+@Mixin(value = WaterFogEnvironment.class, priority = 1100)
 public class MixinFogRenderer {
     @Shadow
     private static int targetBiomeFog;

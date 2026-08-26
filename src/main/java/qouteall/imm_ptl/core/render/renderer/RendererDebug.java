@@ -78,7 +78,7 @@ public class RendererDebug extends PortalRenderer {
             ViewAreaRenderer.renderPortalArea(
                 portal, Vec3.ZERO,
                 modelView,
-                RenderSystem.getProjectionMatrix(),
+                RenderStates.getProjectionMatrix(),
                 true, true,
                 true, true);
         });

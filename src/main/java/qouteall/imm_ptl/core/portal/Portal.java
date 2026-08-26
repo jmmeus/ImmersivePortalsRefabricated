@@ -234,7 +234,13 @@ public class Portal extends Entity implements
     }
     
     @Override
-    protected void readAdditionalSaveData(CompoundTag compoundTag) {
+    protected void readAdditionalSaveData(net.minecraft.world.level.storage.ValueInput valueInput) {
+        if (valueInput instanceof net.minecraft.world.level.storage.TagValueInput tagValueInput) {
+            readPortalDataFromNbt(tagValueInput.input);
+        }
+    }
+    
+    protected void readPortalDataFromNbtInternal(CompoundTag compoundTag) {
         width = compoundTag.getDoubleOr("width", 0.0);
         height = compoundTag.getDoubleOr("height", 0.0);
         thickness = compoundTag.getDoubleOr("thickness", 0.0);
@@ -367,7 +373,13 @@ public class Portal extends Entity implements
     }
     
     @Override
-    protected void addAdditionalSaveData(CompoundTag compoundTag) {
+    protected void addAdditionalSaveData(net.minecraft.world.level.storage.ValueOutput valueOutput) {
+        if (valueOutput instanceof net.minecraft.world.level.storage.TagValueOutput tagValueOutput) {
+            tagValueOutput.output.merge(writePortalDataToNbt());
+        }
+    }
+    
+    protected void writePortalDataToNbtInternal(CompoundTag compoundTag) {
         compoundTag.putDouble("width", width);
         compoundTag.putDouble("height", height);
         compoundTag.putDouble("thickness", thickness);
@@ -909,8 +921,7 @@ public class Portal extends Entity implements
     private Packet<ClientGamePacketListener> createSyncPacket() {
         Validate.isTrue(!level().isClientSide());
         
-        CompoundTag compoundTag = new CompoundTag();
-        addAdditionalSaveData(compoundTag);
+        CompoundTag compoundTag = writePortalDataToNbt();
         
         // the listener generic parameter is contravariant. this is fine
         return (Packet<ClientGamePacketListener>) (Packet)
@@ -1743,7 +1754,7 @@ public class Portal extends Entity implements
         PortalState oldState = getPortalState();
         
         setPos(pos);
-        readAdditionalSaveData(customData);
+        readPortalDataFromNbt(customData);
         
         if (animation.defaultAnimation.durationTicks > 0) {
             animation.defaultAnimation.startClientDefaultAnimation(this, oldState);
@@ -1754,13 +1765,13 @@ public class Portal extends Entity implements
     
     public CompoundTag writePortalDataToNbt() {
         CompoundTag nbtCompound = new CompoundTag();
-        addAdditionalSaveData(nbtCompound);
+        writePortalDataToNbtInternal(nbtCompound);
         return nbtCompound;
     }
     
     public void readPortalDataFromNbt(CompoundTag compound) {
         try {
-            readAdditionalSaveData(compound);
+            readPortalDataFromNbtInternal(compound);
         }
         catch (Exception e) {
             LOGGER.error("Failed to read portal data from nbt {}", compound, e);

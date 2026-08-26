@@ -72,6 +72,8 @@ public class RenderStates {
     public static double viewBobFactor;
     
     public static Matrix4f basicProjectionMatrix;
+    public static Matrix4f currentProjectionMatrix;
+    public static Matrix4f currentModelViewMatrix;
     
     public static Camera originalCamera;
     
@@ -208,9 +210,15 @@ public class RenderStates {
     
     public static void onTotalRenderEnd() {
         Minecraft client = Minecraft.getInstance();
-        IEGameRenderer gameRenderer = (IEGameRenderer) Minecraft.getInstance().gameRenderer;
-        gameRenderer.ip_setLightmapTextureManager(ClientWorldLoader
-            .getDimensionRenderHelper(client.level.dimension()).lightmapTexture);
+        if (client.level == null) return;
+        IEGameRenderer gameRenderer = (IEGameRenderer) client.gameRenderer;
+        ResourceKey<Level> mainDim = originalPlayerDimension != null ? originalPlayerDimension : client.level.dimension();
+        DimensionRenderHelper helper = ClientWorldLoader
+            .getDimensionRenderHelper(mainDim);
+        gameRenderer.ip_setLightmapTextureManager(helper.lightmapTexture);
+        gameRenderer.ip_setFogRenderer(helper.fogRenderer);
+        
+        ClientWorldLoader.RENDER_HELPER_MAP.values().forEach(DimensionRenderHelper::endFrame);
         
         Vec3 currCameraPos = client.gameRenderer.getMainCamera().getPosition();
         cameraPosDelta = currCameraPos.subtract(lastCameraPos);
@@ -218,6 +226,7 @@ public class RenderStates {
             cameraPosDelta = Vec3.ZERO;
         }
         lastCameraPos = currCameraPos;
+
         
         
     }
@@ -255,6 +264,22 @@ public class RenderStates {
      */
     public static float getPartialTick() {
         return partialTick;
+    }
+    
+    public static Matrix4f getProjectionMatrix() {
+        if (currentProjectionMatrix != null) {
+            return new Matrix4f(currentProjectionMatrix);
+        }
+        if (basicProjectionMatrix != null) {
+            return new Matrix4f(basicProjectionMatrix);
+        }
+        Minecraft mc = Minecraft.getInstance();
+        float fov = ((IEGameRenderer) mc.gameRenderer).ip_getFov(
+            mc.gameRenderer.getMainCamera(),
+            getPartialTick(),
+            true
+        );
+        return mc.gameRenderer.getProjectionMatrix(fov);
     }
     
     public static List<String> collectDebugText() {

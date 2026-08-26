@@ -12,7 +12,6 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import org.jetbrains.annotations.Nullable;
-import qouteall.imm_ptl.core.compat.mixin.sodium.IESodiumWorldRenderer;
 import qouteall.imm_ptl.core.render.FrustumCuller;
 
 @Environment(EnvType.CLIENT)
@@ -62,12 +61,13 @@ public class SodiumInterface {
         
         @Override
         public void switchContextWithCurrentWorldRenderer(Object context) {
+            if (context == null) return;
             SodiumWorldRenderer swr =
                 ((LevelRendererExtension) Minecraft.getInstance().levelRenderer).sodium$getWorldRenderer();
             swr.scheduleTerrainUpdate();
             
             RenderSectionManager renderSectionManager =
-                ((IESodiumWorldRenderer) swr).ip_getRenderSectionManager();
+                ((IESodiumWorldRenderer) (Object) swr).ip_getRenderSectionManager();
             
             ((IESodiumRenderSectionManager) renderSectionManager)
                 .ip_swapContext(((SodiumRenderingContext) context));
@@ -94,3 +94,4 @@ public class SodiumInterface {
     }
     
 }
+

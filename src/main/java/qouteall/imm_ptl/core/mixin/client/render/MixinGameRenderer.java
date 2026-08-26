@@ -18,6 +18,7 @@ import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Mutable;
 import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.gen.Invoker;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.ModifyArg;
@@ -47,8 +48,7 @@ public abstract class MixinGameRenderer implements IEGameRenderer {
     @Mutable
     private LightTexture lightTexture;
     
-    @Shadow
-    private boolean renderHand;
+    private boolean renderHand = true;
     @Shadow
     @Final
     @Mutable
@@ -63,6 +63,12 @@ public abstract class MixinGameRenderer implements IEGameRenderer {
     
     @Shadow
     protected abstract void bobView(PoseStack matrices, float f);
+    
+    @Shadow
+    @Final
+    @Mutable
+    private net.minecraft.client.renderer.fog.FogRenderer fogRenderer;
+
     
     @Shadow @Final private static Logger LOGGER;
     
@@ -167,17 +173,27 @@ public abstract class MixinGameRenderer implements IEGameRenderer {
         method = "renderLevel",
         at = @At(
             value = "INVOKE",
-            target = "Lnet/minecraft/client/renderer/LevelRenderer;renderLevel(Lcom/mojang/blaze3d/resource/GraphicsResourceAllocator;Lnet/minecraft/client/DeltaTracker;ZLnet/minecraft/client/Camera;Lnet/minecraft/client/renderer/GameRenderer;Lorg/joml/Matrix4f;Lorg/joml/Matrix4f;)V"
+            target = "Lnet/minecraft/client/renderer/LevelRenderer;renderLevel(Lcom/mojang/blaze3d/resource/GraphicsResourceAllocator;Lnet/minecraft/client/DeltaTracker;ZLnet/minecraft/client/Camera;Lorg/joml/Matrix4f;Lorg/joml/Matrix4f;Lcom/mojang/blaze3d/buffers/GpuBufferSlice;Lorg/joml/Vector4f;Z)V"
         )
     )
     private void wrapRenderLevel(
-        LevelRenderer instance, GraphicsResourceAllocator graphicsResourceAllocator, DeltaTracker deltaTracker, boolean bl, Camera camera, GameRenderer gameRenderer, Matrix4f modelView, Matrix4f projection, Operation<Void> original
+        LevelRenderer instance, GraphicsResourceAllocator graphicsResourceAllocator, DeltaTracker deltaTracker, boolean bl, Camera camera, Matrix4f modelView, Matrix4f projection, com.mojang.blaze3d.buffers.GpuBufferSlice fogBuffer, org.joml.Vector4f fogColor, boolean renderBlockOutline, Operation<Void> original
     ) {
-        original.call(
-            instance, graphicsResourceAllocator, deltaTracker, bl, camera, gameRenderer, modelView, projection
-        );
-        
-        IPCGlobal.renderer.onBeforeHandRendering(modelView);
+        Matrix4f oldModelView = RenderStates.currentModelViewMatrix;
+        Matrix4f oldProjection = RenderStates.currentProjectionMatrix;
+        RenderStates.currentModelViewMatrix = new Matrix4f(modelView);
+        RenderStates.currentProjectionMatrix = new Matrix4f(projection);
+        try {
+            original.call(
+                instance, graphicsResourceAllocator, deltaTracker, bl, camera, modelView, projection, fogBuffer, fogColor, renderBlockOutline
+            );
+            
+            IPCGlobal.renderer.onBeforeHandRendering(modelView);
+        }
+        finally {
+            RenderStates.currentModelViewMatrix = oldModelView;
+            RenderStates.currentProjectionMatrix = oldProjection;
+        }
     }
     
     //resize all world renderers when resizing window
@@ -197,12 +213,12 @@ public abstract class MixinGameRenderer implements IEGameRenderer {
     private static boolean portal_isRenderingHand = false;
     
     @Inject(method = "renderItemInHand", at = @At("HEAD"))
-    private void onRenderHandBegins(Camera camera, float f, Matrix4f matrix4f, CallbackInfo ci) {
+    private void onRenderHandBegins(float partialTick, boolean renderHand, Matrix4f matrix4f, CallbackInfo ci) {
         portal_isRenderingHand = true;
     }
     
     @Inject(method = "renderItemInHand", at = @At("RETURN"))
-    private void onRenderHandEnds(Camera camera, float f, Matrix4f matrix4f, CallbackInfo ci) {
+    private void onRenderHandEnds(float partialTick, boolean renderHand, Matrix4f matrix4f, CallbackInfo ci) {
         portal_isRenderingHand = false;
     }
     
@@ -248,26 +264,6 @@ public abstract class MixinGameRenderer implements IEGameRenderer {
             return (float) (f * RenderStates.getViewBobbingOffsetMultiplier());
         }
     }
-
-
-//    @Redirect(
-//        method = "Lnet/minecraft/client/renderer/GameRenderer;bobView(Lcom/mojang/blaze3d/vertex/PoseStack;F)V",
-//        at = @At(
-//            value = "INVOKE",
-//            target = "Lcom/mojang/blaze3d/vertex/PoseStack;translate(FFF)V"
-//        )
-//    )
-//    private void redirectBobViewTranslate(PoseStack matrixStack, float x, float y, float z) {
-//        if (portal_isRenderingHand) {
-//            matrixStack.translate(x, y, z);
-//        }
-//        else {
-//            double multiplier = RenderStates.getViewBobbingOffsetMultiplier();
-//            matrixStack.translate(
-//                x * multiplier, y * multiplier, z * multiplier
-//            );
-//        }
-//    }
     
     // make sure that the portal rendering basic projection matrix is right
     // the basic projection matrix does not contain view bobbing
@@ -324,6 +320,11 @@ public abstract class MixinGameRenderer implements IEGameRenderer {
     }
     
     @Override
+    public void ip_setDoRenderHand(boolean cond) {
+        renderHand = cond;
+    }
+    
+    @Override
     public void ip_setCamera(Camera camera_) {
         mainCamera = camera_;
     }
@@ -333,4 +334,18 @@ public abstract class MixinGameRenderer implements IEGameRenderer {
         panoramicMode = cond;
     }
     
+    @Override
+    public net.minecraft.client.renderer.fog.FogRenderer ip_getFogRenderer() {
+        return fogRenderer;
+    }
+    
+    @Override
+    public void ip_setFogRenderer(net.minecraft.client.renderer.fog.FogRenderer arg) {
+        this.fogRenderer = arg;
+    }
+    
+    @Invoker("getFov")
+    @Override
+    public abstract float ip_getFov(Camera camera, float partialTick, boolean isFovChanged);
 }
+

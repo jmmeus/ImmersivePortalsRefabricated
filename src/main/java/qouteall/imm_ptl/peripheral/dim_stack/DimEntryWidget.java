@@ -108,26 +108,23 @@ public class DimEntryWidget extends ContainerObjectSelectionList.Entry<DimEntryW
         );
         
         if (dimIconPath != null) {
-            guiGraphics.pose().pushPose();
-            guiGraphics.pose().translate(x, y, 0);
+            guiGraphics.pose().pushMatrix();
+            guiGraphics.pose().translate((float) x, (float) y);
             
             int iconLen = widgetHeight - 4;
             
             if (entry != null && entry.flipped) {
-                guiGraphics.pose().rotateAround(
-                    DQuaternion.rotationByDegrees(new Vec3(0, 0, 1), 180).toMcQuaternion(),
-                    iconLen / 2.0f, iconLen / 2.0f, 0
-                );
+                guiGraphics.pose().rotateAbout((float) Math.PI, iconLen / 2.0f, iconLen / 2.0f);
             }
             
             guiGraphics.blit(
-                RenderType::guiTextured,
+                net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED,
                 dimIconPath, 0, 0, 0.0F, 0.0F,
                 iconLen, iconLen,
                 iconLen, iconLen
             );
             
-            guiGraphics.pose().popPose();
+            guiGraphics.pose().popMatrix();
         }
         
         if (entry != null) {
@@ -143,27 +140,27 @@ public class DimEntryWidget extends ContainerObjectSelectionList.Entry<DimEntryW
             );
             
             if (arrowToPrevious != ArrowType.none) {
-                guiGraphics.pose().pushPose();
-                guiGraphics.pose().translate(x + rowWidth - 13, y, 0);
-                guiGraphics.pose().scale(1.5f, 1.5f, 1.5f);
+                guiGraphics.pose().pushMatrix();
+                guiGraphics.pose().translate(x + rowWidth - 13, y);
+                guiGraphics.pose().scale(1.5f, 1.5f);
                 guiGraphics.drawString(
                     client.font, Component.literal("↑"),
                     0, 0,
                     arrowToPrevious == ArrowType.enabled ? 0xFF999999 : 0xFFFF0000
                 );
-                guiGraphics.pose().popPose();
+                guiGraphics.pose().popMatrix();
             }
             
             if (arrowToNext != ArrowType.none) {
-                guiGraphics.pose().pushPose();
-                guiGraphics.pose().translate(x + rowWidth - 13, y + widgetHeight - 14.5f, 0);
-                guiGraphics.pose().scale(1.5f, 1.5f, 1.5f);
+                guiGraphics.pose().pushMatrix();
+                guiGraphics.pose().translate(x + rowWidth - 13, y + widgetHeight - 14.5f);
+                guiGraphics.pose().scale(1.5f, 1.5f);
                 guiGraphics.drawString(
                     client.font, Component.literal("↓"),
                     0, 0,
                     arrowToNext == ArrowType.enabled ? 0xFF999999 : 0xFFFF0000
                 );
-                guiGraphics.pose().popPose();
+                guiGraphics.pose().popMatrix();
             }
         }
     }

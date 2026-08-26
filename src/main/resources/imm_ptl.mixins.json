@@ -100,6 +100,7 @@
     "client.render.IESectionRenderDispatcher",
     "client.render.MixinBlockEntityRenderDispatcher",
     "client.render.MixinCamera",
+    "client.render.MixinChunkSectionsToRender",
     "client.render.MixinEntityRenderDispatcher",
     "client.render.MixinFrustum_FixDeadLoop",
     "client.render.MixinGameRenderer",

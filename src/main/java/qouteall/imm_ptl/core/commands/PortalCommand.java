@@ -2237,7 +2237,7 @@ public class PortalCommand {
     public static void sendPortalInfo(Consumer<Component> func, Portal portal) {
         func.accept(
             McHelper.compoundTagToTextSorted(
-                portal.saveWithoutId(new CompoundTag()),
+                portal.writePortalDataToNbt(),
                 " ",
                 0
             )
@@ -2447,9 +2447,18 @@ public class PortalCommand {
     private static void updateEntityFullNbt(Entity entity, CompoundTag nbt) {
         nbt.remove("id");
         nbt.remove("UUID"); // not allowed to change UUID
-        CompoundTag result = entity.saveWithoutId(new CompoundTag());
-        result.merge(nbt);
-        entity.load(result);
+        if (entity instanceof Portal portal) {
+            CompoundTag result = portal.writePortalDataToNbt();
+            result.merge(nbt);
+            portal.readPortalDataFromNbt(result);
+        }
+        else {
+            net.minecraft.world.level.storage.TagValueOutput output = net.minecraft.world.level.storage.TagValueOutput.createWithContext(net.minecraft.util.ProblemReporter.DISCARDING, entity.level().registryAccess());
+            entity.saveWithoutId(output);
+            CompoundTag result = output.buildResult();
+            result.merge(nbt);
+            entity.load(net.minecraft.world.level.storage.TagValueInput.create(net.minecraft.util.ProblemReporter.DISCARDING, entity.level().registryAccess(), result));
+        }
     }
     
     private static void registerEulerCommands(LiteralArgumentBuilder<CommandSourceStack> builder) {

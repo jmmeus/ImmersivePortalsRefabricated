@@ -1,6 +1,5 @@
 package qouteall.imm_ptl.core.render;
 
-import com.mojang.blaze3d.opengl.Uniform;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
@@ -12,7 +11,6 @@ import org.lwjgl.opengl.GL11;
 import qouteall.imm_ptl.core.CHelper;
 import qouteall.imm_ptl.core.IPCGlobal;
 import qouteall.imm_ptl.core.IPGlobal;
-import qouteall.imm_ptl.core.ducks.IEShader;
 import qouteall.imm_ptl.core.portal.Portal;
 import qouteall.imm_ptl.core.render.context_management.PortalRendering;
 import qouteall.q_misc_util.my_util.Plane;

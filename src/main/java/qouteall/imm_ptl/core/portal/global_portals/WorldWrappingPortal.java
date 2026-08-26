@@ -34,16 +34,16 @@ public class WorldWrappingPortal extends GlobalTrackedPortal {
     }
     
     @Override
-    protected void readAdditionalSaveData(CompoundTag compoundTag) {
-        super.readAdditionalSaveData(compoundTag);
+    protected void readPortalDataFromNbtInternal(CompoundTag compoundTag) {
+        super.readPortalDataFromNbtInternal(compoundTag);
         
         isInward = compoundTag.getBooleanOr("isInward", true);
         zoneId = compoundTag.getIntOr("zoneId", -1);
     }
     
     @Override
-    protected void addAdditionalSaveData(CompoundTag compoundTag) {
-        super.addAdditionalSaveData(compoundTag);
+    protected void writePortalDataToNbtInternal(CompoundTag compoundTag) {
+        super.writePortalDataToNbtInternal(compoundTag);
         
         compoundTag.putBoolean("isInward", isInward);
         compoundTag.putInt("zoneId", zoneId);

@@ -118,12 +118,12 @@ public class LoadingIndicatorEntity extends Entity {
     }
     
     @Override
-    protected void readAdditionalSaveData(CompoundTag tag) {
+    protected void readAdditionalSaveData(net.minecraft.world.level.storage.ValueInput input) {
     
     }
     
     @Override
-    protected void addAdditionalSaveData(CompoundTag tag) {
+    protected void addAdditionalSaveData(net.minecraft.world.level.storage.ValueOutput output) {
     
     }
     

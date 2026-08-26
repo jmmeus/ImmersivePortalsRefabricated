@@ -146,8 +146,10 @@ public class PacketRedirection {
         if (packet instanceof ClientboundBundlePacket bundlePacket) {
             // vanilla has special handling to bundle packet
             // don't wrap a bundle packet into a normal packet
-            List<Packet<ClientGamePacketListener>> newSubPackets = new ArrayList<>();
-            for (var subPacket : bundlePacket.subPackets()) {
+            Iterable<Packet<? super ClientGamePacketListener>> subPackets = bundlePacket.subPackets();
+            int estimatedSize = subPackets instanceof java.util.Collection<?> col ? col.size() : 16;
+            List<Packet<ClientGamePacketListener>> newSubPackets = new ArrayList<>(estimatedSize);
+            for (var subPacket : subPackets) {
                 newSubPackets.add(createRedirectedMessage(
                     server, dimension, (Packet<ClientGamePacketListener>) subPacket
                 ));

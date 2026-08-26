@@ -40,9 +40,11 @@ public class MixinSodiumDefaultShaderInterface {
         if (uIPClippingEquation != null) {
             if (FrontClipping.isClippingEnabled) {
                 double[] equation = FrontClipping.getActiveClipPlaneEquationAfterModelView();
-                uIPClippingEquation.set(new float[]{
-                    (float) equation[0], (float) equation[1], (float) equation[2], (float) equation[3]
-                });
+                if (equation != null) {
+                    uIPClippingEquation.set(new float[]{
+                        (float) equation[0], (float) equation[1], (float) equation[2], (float) equation[3]
+                    });
+                }
             }
             else {
                 uIPClippingEquation.set(new float[]{0, 0, 0, 1});

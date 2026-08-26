@@ -158,11 +158,21 @@ public class FrustumCuller {
     ) {
         // 2  1
         // 3  0
+        // Compute center ray into the frustum
+        Vec3 vCenter = vertices[0].add(vertices[1]).add(vertices[2]).add(vertices[3]).scale(0.25);
+        
         // Inward pointing normals (dot product > 0 for points inside frustum)
         Vec3 normal0 = vertices[0].cross(vertices[1]).normalize();
+        if (normal0.dot(vCenter) < 0) normal0 = normal0.scale(-1);
+        
         Vec3 normal1 = vertices[1].cross(vertices[2]).normalize();
+        if (normal1.dot(vCenter) < 0) normal1 = normal1.scale(-1);
+        
         Vec3 normal2 = vertices[2].cross(vertices[3]).normalize();
+        if (normal2.dot(vCenter) < 0) normal2 = normal2.scale(-1);
+        
         Vec3 normal3 = vertices[3].cross(vertices[0]).normalize();
+        if (normal3.dot(vCenter) < 0) normal3 = normal3.scale(-1);
         
         // assume that the plane origin is in the coordinate origin, so W is 0
         return new Frustum4Planes(
@@ -181,12 +191,23 @@ public class FrustumCuller {
         
         // 2  1
         // 3  0
-        Vec3[] vTransformed = new Vec3[]{
-            portal.transformPoint(v[0]).subtract(cameraPos),
-            portal.transformPoint(v[1]).subtract(cameraPos),
-            portal.transformPoint(v[2]).subtract(cameraPos),
-            portal.transformPoint(v[3]).subtract(cameraPos)
-        };
+        Vec3[] vTransformed;
+        if (portal instanceof Mirror) {
+            // Mirror reflection inverts chirality (CCW -> CW). Reverse to keep CCW.
+            vTransformed = new Vec3[]{
+                portal.transformPoint(v[3]).subtract(cameraPos),
+                portal.transformPoint(v[2]).subtract(cameraPos),
+                portal.transformPoint(v[1]).subtract(cameraPos),
+                portal.transformPoint(v[0]).subtract(cameraPos)
+            };
+        } else {
+            vTransformed = new Vec3[]{
+                portal.transformPoint(v[0]).subtract(cameraPos),
+                portal.transformPoint(v[1]).subtract(cameraPos),
+                portal.transformPoint(v[2]).subtract(cameraPos),
+                portal.transformPoint(v[3]).subtract(cameraPos)
+            };
+        }
         
         Frustum4Planes fourPlanes =
             getFrustumPlanesFromFourVerticesCounterClockwise(vTransformed);

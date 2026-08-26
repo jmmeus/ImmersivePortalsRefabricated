@@ -143,6 +143,29 @@ public class IPPortalShaders {
         GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
         
         screenQuadVaoId = GL30.glGenVertexArrays();
+        int screenQuadVboId = GL15.glGenBuffers();
+        GL30.glBindVertexArray(screenQuadVaoId);
+        GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, screenQuadVboId);
+        
+        FloatBuffer quadBuf = ByteBuffer.allocateDirect(6 * 3 * 4)
+            .order(ByteOrder.nativeOrder())
+            .asFloatBuffer();
+        quadBuf.put(new float[] {
+            -1.0f,  1.0f, 0.0f,
+            -1.0f, -1.0f, 0.0f,
+             1.0f, -1.0f, 0.0f,
+            -1.0f,  1.0f, 0.0f,
+             1.0f, -1.0f, 0.0f,
+             1.0f,  1.0f, 0.0f
+        });
+        quadBuf.flip();
+        GL15.glBufferData(GL15.GL_ARRAY_BUFFER, quadBuf, GL15.GL_STATIC_DRAW);
+        
+        GL20.glEnableVertexAttribArray(0);
+        GL20.glVertexAttribPointer(0, 3, GL11.GL_FLOAT, false, 3 * 4, 0);
+        
+        GL30.glBindVertexArray(0);
+        GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
         
         initialized = true;
         LOGGER.info("[ImmPtl] IPPortalShaders initialized successfully (optimized pipeline)");
@@ -371,18 +394,11 @@ public class IPPortalShaders {
     
     private static final String SCREEN_QUAD_VERTEX_SHADER = """
         #version 150
+        in vec3 Position;
         uniform vec4 Color;
         out vec4 vertexColor;
-        const vec2 positions[6] = vec2[](
-            vec2(-1.0,  1.0),
-            vec2(-1.0, -1.0),
-            vec2( 1.0, -1.0),
-            vec2(-1.0,  1.0),
-            vec2( 1.0, -1.0),
-            vec2( 1.0,  1.0)
-        );
         void main() {
-            gl_Position = vec4(positions[gl_VertexID], 0.0, 1.0);
+            gl_Position = vec4(Position, 1.0);
             vertexColor = Color;
         }
         """;

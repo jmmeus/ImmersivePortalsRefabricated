@@ -42,8 +42,8 @@ public class BreakableMirror extends Mirror {
     }
     
     @Override
-    protected void readAdditionalSaveData(CompoundTag tag) {
-        super.readAdditionalSaveData(tag);
+    protected void readPortalDataFromNbtInternal(CompoundTag tag) {
+        super.readPortalDataFromNbtInternal(tag);
         if (tag.contains("boxXL")) {
             wallArea = new IntBox(
                 new BlockPos(
@@ -71,8 +71,8 @@ public class BreakableMirror extends Mirror {
     }
     
     @Override
-    protected void addAdditionalSaveData(CompoundTag tag) {
-        super.addAdditionalSaveData(tag);
+    protected void writePortalDataToNbtInternal(CompoundTag tag) {
+        super.writePortalDataToNbtInternal(tag);
         if (wallArea != null) {
             tag.putInt("boxXL", wallArea.l.getX());
             tag.putInt("boxYL", wallArea.l.getY());

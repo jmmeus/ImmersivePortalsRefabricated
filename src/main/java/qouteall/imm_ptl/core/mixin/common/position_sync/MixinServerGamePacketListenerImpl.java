@@ -219,10 +219,10 @@ public abstract class MixinServerGamePacketListenerImpl implements IEServerPlayN
     }
     
     @Inject(
-        method = "isPlayerCollidingWithAnythingNew", at = @At("HEAD"), cancellable = true
+        method = "isEntityCollidingWithAnythingNew", at = @At("HEAD"), cancellable = true
     )
     private void onIsPlayerCollidingWithAnythingNew(
-        LevelReader level, AABB playerBB, double newX, double newY, double newZ, CallbackInfoReturnable<Boolean> cir
+        LevelReader level, Entity entity, AABB playerBB, double newX, double newY, double newZ, CallbackInfoReturnable<Boolean> cir
     ) {
         if (!IPGlobal.crossPortalCollision) {
             return;
@@ -230,18 +230,18 @@ public abstract class MixinServerGamePacketListenerImpl implements IEServerPlayN
         
         // for this to work, the player's portal collision status must be updated after teleporting
         
-        AABB activePlayerBB = ((IEEntity) player).ip_getActiveCollisionBox(playerBB);
+        AABB activePlayerBB = ((IEEntity) entity).ip_getActiveCollisionBox(playerBB);
         
         if (activePlayerBB == null) {
             cir.setReturnValue(false);
             return;
         }
         
-        AABB newBB = this.player.getBoundingBox().move(
-            newX - this.player.getX(), newY - this.player.getY(), newZ - this.player.getZ()
+        AABB newBB = entity.getBoundingBox().move(
+            newX - entity.getX(), newY - entity.getY(), newZ - entity.getZ()
         );
         
-        AABB activeNewBB = ((IEEntity) player).ip_getActiveCollisionBox(newBB);
+        AABB activeNewBB = ((IEEntity) entity).ip_getActiveCollisionBox(newBB);
         
         if (activeNewBB == null) {
             cir.setReturnValue(false);
@@ -249,7 +249,7 @@ public abstract class MixinServerGamePacketListenerImpl implements IEServerPlayN
         }
         
         Iterable<VoxelShape> newBBCollisions =
-            level.getCollisions(this.player, activeNewBB.deflate(1.0E-5F));
+            level.getCollisions(entity, activeNewBB.deflate(1.0E-5F));
         
         VoxelShape activePlayerBBShape = Shapes.create(activePlayerBB.deflate(1.0E-5F));
         

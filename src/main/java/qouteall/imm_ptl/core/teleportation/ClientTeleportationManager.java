@@ -46,6 +46,7 @@ import qouteall.imm_ptl.core.portal.animation.StableClientTimer;
 import qouteall.imm_ptl.core.render.FrontClipping;
 import qouteall.imm_ptl.core.render.MyGameRenderer;
 import qouteall.imm_ptl.core.render.TransformationManager;
+import qouteall.imm_ptl.core.render.context_management.DimensionRenderHelper;
 import qouteall.imm_ptl.core.render.context_management.FogRendererContext;
 import qouteall.imm_ptl.core.render.context_management.RenderStates;
 import qouteall.imm_ptl.core.render.context_management.WorldRenderInfo;
@@ -484,8 +485,9 @@ public class ClientTeleportationManager {
         ((IEAbstractClientPlayer) player).ip_setClientLevel(toWorld);
         
         IEGameRenderer gameRenderer = (IEGameRenderer) Minecraft.getInstance().gameRenderer;
-        gameRenderer.ip_setLightmapTextureManager(ClientWorldLoader
-            .getDimensionRenderHelper(toDimension).lightmapTexture);
+        DimensionRenderHelper helper = ClientWorldLoader.getDimensionRenderHelper(toDimension);
+        gameRenderer.ip_setLightmapTextureManager(helper.lightmapTexture);
+        gameRenderer.ip_setFogRenderer(helper.fogRenderer);
         
         client.level = toWorld;
         ((IEMinecraftClient) client).ip_setWorldRenderer(
